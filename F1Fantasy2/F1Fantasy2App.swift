@@ -10,8 +10,8 @@ import SwiftUI
 @main
 struct F1Fantasy2App: App {
     var body: some Scene {
-        DocumentGroup(newDocument: F1Fantasy2Document()) { file in
-            ContentView(document: file.$document)
+        WindowGroup {
+            ContentView()
         }
     }
 }

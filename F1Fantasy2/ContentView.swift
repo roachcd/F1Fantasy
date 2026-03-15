@@ -8,13 +8,20 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Binding var document: F1Fantasy2Document
-
+    @EnvironmentObject var userData: UserData
+    
     var body: some View {
-        TextEditor(text: $document.text)
+        NavigationStack{
+            if userData.isLoggedIn {
+                EmptyView()
+            }
+            else{
+                LoginView(userData: userData)
+            }
+        }
     }
 }
 
 #Preview {
-    ContentView(document: .constant(F1Fantasy2Document()))
+    ContentView().environmentObject(UserData())
 }
