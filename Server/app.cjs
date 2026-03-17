@@ -29,7 +29,7 @@ const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
-    database: 'gridapps_betting',
+    database: 'gridapps_f1b',
     port: 3306
 });
 
@@ -73,6 +73,7 @@ app.post('/login', (req, res) => {
 
     const user = results[0];
     const email = user.email
+    const id = user.id
 
     // Verify password
     const isValid = await bcrypt.compare(password, user.password);
@@ -80,11 +81,107 @@ app.post('/login', (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '7d' });
-    res.json({ message: 'Login successful', token, email });
+    res.json({ message: 'Login successful', token, email, id });
   });
 });
 
+app.get('/leagues', (req, res) => {
+  console.log("Get Leagues");
 
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token) return res.status(401).json({ message: "Missing token" });
+
+  const userID = getUserID(token);
+
+  const sql = 'select l.id, l.name, l.ownerId, l.season_id from user_leagues ul join leagues l on ul.league_id = l.id where user_id = ?;';
+  pool.query(sql, [userID], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    res.json(result);
+  });
+});
+
+app.get('/leagueManagers', (req, res) => {
+  console.log('League Managers');
+  const leagueId = req.query.leagueId;
+
+  const sql = 'SELECT u.id, lm.username, lm.points FROM users u JOIN user_leagues lm ON lm.user_id = u.id WHERE lm.league_id = ?;';
+  pool.query(sql, [leagueId], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
+    res.json(result);
+  });
+});
+
+app.get('/events', (req, res) => {
+  const seasonId = req.query.seasonId;
+
+  console.log('get events, season: ', seasonId);
+
+  const sql = 'SELECT * FROM season_events JOIN events ON season_events.event_id = events.id WHERE season_id = ?;';
+  pool.query(sql, [seasonId], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    res.json(result);
+  });
+});
+
+app.get("/eventDrivers", (req, res) => {
+  console.log("Event Drivers");
+
+  const eventId = req.query.eventId;
+
+  const sql = `
+  SELECT 
+    d.id as driver_id,
+    d.name,
+    ed.id AS event_driver_id,
+    d.car_number,
+    d.team,
+    ed.position,
+    ed.points,
+    COALESCE(SUM(b.amount), 0) AS total_bids
+FROM drivers d
+JOIN event_drivers ed 
+    ON d.id = ed.driver_id
+LEFT JOIN bids b 
+    ON b.event_driver_id = ed.id
+WHERE ed.event_id = ?
+GROUP BY 
+    d.id,
+    d.name,
+    ed.id,
+    d.car_number,
+    d.team,
+    ed.position,
+    ed.points;`;
+  pool.query(sql, [eventId], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
+    res.json(result);
+  });
+})
+
+app.get("/driverBids", (req, res) => {
+  console.log("Driver Bids");
+
+  const eventDriverId = req.query.eventDriverId;
+  const leagueId = req.query.leagueId;
+
+  const sql = 'SELECT b.id, ul.username AS manager_name, b.amount, b.created_at FROM bids b JOIN event_drivers ed ON b.event_driver_id = ed.id LEFT JOIN user_leagues ul ON ul.user_id = b.user_id AND ul.league_id = b.league_id WHERE b.event_driver_id = ? AND b.league_id = ?;';
+  pool.query(sql, [eventDriverId, leagueId], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
+    res.json(result);
+  });
+});
+
+app.post("/placeBid", (req, res) => {
+  console.log("Place Bid")
+  const { token, event_driver_id, amount, league_id } = req.body;
+  const userID = getUserID(token)
+  const sql = 'INSERT INTO bids (user_id, event_driver_id, league_id, amount) VALUES (?, ?, ?, ?);';
+  pool.query(sql, [userID, event_driver_id, league_id, amount], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Success!' });
+  });
+})
 
 const port = process.env.PORT || 3000;
 app.listen(port);

@@ -13,7 +13,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack{
             if userData.isLoggedIn {
-                EmptyView()
+                HomeView(userData: userData)
             }
             else{
                 LoginView(userData: userData)
