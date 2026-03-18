@@ -11,6 +11,7 @@ struct BiddingListView: View {
     @ObservedObject var league: League
     @ObservedObject var event: Event
     @ObservedObject var userData: UserData
+    @State private var refreshTask: Task<Void, Never>?
 
     var sortedDrivers: [Driver] {
         event.drivers.sorted { $0.total_bids > $1.total_bids }
@@ -18,6 +19,9 @@ struct BiddingListView: View {
     
     var body: some View {
         List{
+            if #unavailable(iOS 26) {
+                HomeView.AccessoryView(selectedLeague: league)
+            }
             ForEach(sortedDrivers, id: \.id) { driver in
                 NavigationLink{
                     DriverBiddingView(event: event, userData: userData, driver: driver)
@@ -29,6 +33,26 @@ struct BiddingListView: View {
         .onAppear {
             Task {
                 await event.load()
+            }
+        }
+        .onAppear {
+            startAutoRefresh()
+        }
+        .onDisappear {
+            refreshTask?.cancel()
+        }
+    }
+    private func startAutoRefresh() {
+        refreshTask?.cancel()
+
+        refreshTask = Task {
+            while !Task.isCancelled {
+                do{
+                    _ = try await event.getDrivers()
+                }catch{
+                    print(error)
+                }
+                try? await Task.sleep(for: .seconds(5))
             }
         }
     }

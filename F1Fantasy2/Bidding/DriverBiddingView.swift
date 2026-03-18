@@ -17,7 +17,8 @@ struct DriverBiddingView: View {
     @State var showBidConfirmation = false
     @State var showClosedMessage = false
     @State var loading = true
-    
+    @State private var refreshTask: Task<Void, Never>?
+
     func getBids() async -> Bool{
         do{
             let network = Network()
@@ -172,6 +173,22 @@ struct DriverBiddingView: View {
                 } message: {
                     Text("Bidding has been closed.")
                 }
+        }
+        .onAppear {
+            startAutoRefresh()
+        }
+        .onDisappear {
+            refreshTask?.cancel()
+        }
+    }
+    private func startAutoRefresh() {
+        refreshTask?.cancel()
+
+        refreshTask = Task {
+            while !Task.isCancelled {
+                _ = await getBids()
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
     }
 }

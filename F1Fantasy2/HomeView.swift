@@ -81,6 +81,11 @@ struct HomeView: View {
                 EventIndicatorMenu(league: league)
             }
         }
+        .onChange(of: selectedTab){
+            Task{
+                _ = await userData.selectedLeague!.selectedEvent!.load()
+            }
+        }
     }
     
     private var leagueMenu: some View {

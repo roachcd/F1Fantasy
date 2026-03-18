@@ -29,6 +29,13 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject{
         var success = true
         do{
             success = try await getDrivers()
+            var closed: Bool {
+                guard let date = TimeFormatter.shared.date(from: bidding_closes_at) else {
+                    return false
+                }
+                return date <= Date()
+            }
+            if closed{status = 1}
         }
         catch{
             print(error)
