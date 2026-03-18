@@ -13,6 +13,44 @@ struct HomeView: View {
     @State var eventSheet: Bool = false
     
     var body: some View {
+        if #available(iOS 26.0, *){
+            tabBar
+                .tabBarMinimizeBehavior(.onScrollDown)
+                .tabViewBottomAccessory {
+                    if let selectedLeague = userData.selectedLeague{
+                        AccessoryView(selectedLeague: selectedLeague)
+                    }
+                }
+        }
+        else{
+            tabBar
+        }
+    }
+
+    struct AccessoryView: View {
+        @ObservedObject var selectedLeague: League
+
+        var body: some View {
+            HStack {
+                if selectedLeague.selectedEvent?.status == 1 {
+                    Image(systemName: "lock.fill")
+                    Text("This event is locked")
+                } else if selectedLeague.selectedEvent?.status == 2 {
+                    Image(systemName: "lock.open.fill")
+                    CountdownText(timestamp: selectedLeague.selectedEvent!.bidding_closes_at)
+                    Spacer()
+                    Text("$\(selectedLeague.thisUser.money)")
+                } else if selectedLeague.selectedEvent?.status == 3 {
+                    Image(systemName: "flag.pattern.checkered.2.crossed")
+                    Text("This event is finished")
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
+    }
+    
+    private var tabBar: some View {
         TabView(selection: $selectedTab) {
             LeagueView(userData: userData)
                 .tabItem { Label("League", systemImage: "chart.bar.fill") }

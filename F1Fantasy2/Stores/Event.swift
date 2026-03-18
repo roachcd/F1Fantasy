@@ -13,11 +13,13 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject{
     var id: Int
     var name: String
     var event_date: String
+    var bidding_closes_at: String
     var status: Int
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case event_date
+        case bidding_closes_at
         case status
     }
     

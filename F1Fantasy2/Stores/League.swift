@@ -23,12 +23,21 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
     
     @Published var events: [Event] = []
     @Published var selectedEvent: Event?
-    @Published var managers: [Manager] = []    
+    @Published var managers: [Manager] = []
     
-    func load() async -> Bool{
+    struct ThisUser: Decodable {
+        var user_id: Int
+        var username: String
+        var money: Int
+    }
+    
+    @Published var thisUser: ThisUser = ThisUser(user_id: -1, username: "Error", money: 0)
+    
+    func load(token: String) async -> Bool{
         var success = false
         
         do{
+            success = try await self.getThisUser(token: token)
             success = try await self.getManagers()
             success = try await self.getEvents()
         }
@@ -38,6 +47,18 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
         }
 
         if success{
+            return true
+        }
+        return false
+    }
+    
+    func getThisUser(token: String) async throws -> Bool{
+        let network = Network()
+        let response = await network.get(endpoint: "thisLeagueUser", queryItems: [URLQueryItem(name: "leagueId", value: "\(id)")], token: token)
+        if response.success{
+            let data = response.data
+            let thisUsers: [ThisUser] = try JSONDecoder().decode([ThisUser].self, from: data!)
+            self.thisUser = thisUsers.first!
             return true
         }
         return false

@@ -183,6 +183,23 @@ app.post("/placeBid", (req, res) => {
   });
 })
 
+app.get("/thisLeagueUser", (req, res) => {
+  console.log("Get thisLeagueUser");
+  const league_id = req.query.leagueId;
+
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token) return res.status(401).json({ message: "Missing token" });
+
+  const userID = getUserID(token);
+
+  const sql = 'select user_id, username, money from user_leagues where league_id = ? and user_id = ?;';
+  pool.query(sql, [league_id, userID], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    res.json(result);
+  });
+})
+
 const port = process.env.PORT || 3000;
 app.listen(port);
 console.log("Listening on " + port)

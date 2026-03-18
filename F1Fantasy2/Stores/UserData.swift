@@ -97,7 +97,7 @@ final class UserData: ObservableObject{
             }
             
             self.selectedLeague = self.leagues.first
-            let success = await self.selectedLeague?.load()
+            let success = await self.selectedLeague?.load(token: token)
             if success!{
                 return true
             }

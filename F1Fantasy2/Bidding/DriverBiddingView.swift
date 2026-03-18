@@ -15,6 +15,8 @@ struct DriverBiddingView: View {
     let priceRange = 5...50
     @State var bids: [Bid] = []
     @State var showBidConfirmation = false
+    @State var showClosedMessage = false
+    @State var loading = true
     
     func getBids() async -> Bool{
         do{
@@ -23,6 +25,7 @@ struct DriverBiddingView: View {
             if response.success{
                 bids = try JSONDecoder().decode([Bid].self, from: response.data!)
                 print(bids)
+                loading = false
                 return true
             }
             return false
@@ -31,6 +34,13 @@ struct DriverBiddingView: View {
             print(error)
             return false
         }
+    }
+    
+    var closed: Bool {
+        guard let date = TimeFormatter.shared.date(from: event.bidding_closes_at) else {
+            return false
+        }
+        return date <= Date()   
     }
     
     var body: some View {
@@ -71,10 +81,17 @@ struct DriverBiddingView: View {
                                 .frame(width: 70, alignment: .trailing)
                             Text(TimeFormatter.shared.format(bid.created_at))
                                 .frame(width: 120, alignment: .trailing)
-                        }//.foregroundStyle(bid.manager_name == userData.userId ? .blue : .primary)
+                        }.foregroundStyle(bid.manager_name == userData.selectedLeague!.thisUser.username ? .blue : .primary)
                     }
-                    if bids.isEmpty{
+                    if bids.isEmpty && !loading{
                         Text("No bids placed yet")
+                    }
+                    if loading {
+                        HStack{
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -87,38 +104,74 @@ struct DriverBiddingView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             HStack{
-                Picker("$", selection: $selectedBid){
-                    ForEach(priceRange, id: \.self) { price in
-                        Text("$\(price)")
-                            .tag(price)
-                    }
+                if closed || userData.selectedLeague!.selectedEvent?.status == 1{
+                    EmptyView()
                 }
+                else if userData.selectedLeague!.thisUser.money == 0 {
+                    Text("Out of money")
+                }
+                else{
+                    Picker("$", selection: $selectedBid){
+                        ForEach(5...userData.selectedLeague!.thisUser.money, id: \.self) { price in
+                            Text("$\(price)")
+                                .tag(price)
+                        }
+                    }
                     .pickerStyle(.wheel)
                     .frame(width: .infinity, height: 120)
                     .clipped()
-                Spacer()
-                Button{
-                    showBidConfirmation = true
-                }label: {
-                    Text("Bid")
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 36)
-                }.buttonStyle(.borderedProminent)
-                    .alert("Place Bid?", isPresented: $showBidConfirmation) {
-                        Button("Cancel", role: .cancel) { }
-                        Button("Confirm") {
-                            Task{
-                                let network = Network()
-                                let response = await network.post(endpoint: "placeBid", body: ["token": userData.token, "event_driver_id": driver.event_driver_id, "league_id": "\(userData.selectedLeague!.id)", "amount": "\(selectedBid)"])
-                                if response.success{
-                                    _ = await getBids()
+                    Spacer()
+                    Button{
+                        var closed: Bool {
+                            guard let date = TimeFormatter.shared.date(from: event.bidding_closes_at) else {
+                                return false
+                            }
+                            return date <= Date()
+                        }
+                        if closed{
+                            showClosedMessage = true
+                        }
+                        else{
+                            showBidConfirmation = true
+                        }
+                    }label: {
+                        Text("Bid")
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 36)
+                    }.buttonStyle(.borderedProminent)
+                        .alert("Place Bid?", isPresented: $showBidConfirmation) {
+                            Button("Cancel", role: .cancel) { }
+                            Button("Confirm") {
+                                Task{
+                                    var closed: Bool {
+                                        guard let date = TimeFormatter.shared.date(from: event.bidding_closes_at) else {
+                                            return false
+                                        }
+                                        return date <= Date()
+                                    }
+                                    if closed{
+                                        showClosedMessage = true
+                                    }
+                                    else{
+                                        let network = Network()
+                                        let response = await network.post(endpoint: "placeBid", body: ["token": userData.token, "event_driver_id": driver.event_driver_id, "league_id": "\(userData.selectedLeague!.id)", "amount": "\(selectedBid)"])
+                                        if response.success{
+                                            userData.selectedLeague!.thisUser.money -= selectedBid
+                                            _ = await getBids()
+                                        }
+                                    }
                                 }
                             }
+                        } message: {
+                            Text("Are you sure you want to bid $\(selectedBid) on \(driver.name)?")
                         }
-                    } message: {
-                        Text("Are you sure you want to bid $\(selectedBid) on \(driver.name)?")
-                    }
+                }
             }.padding()
+                .alert("Bidding Closed", isPresented: $showClosedMessage) {
+                    Button("Ok", role: .cancel) { }
+                } message: {
+                    Text("Bidding has been closed.")
+                }
         }
     }
 }
