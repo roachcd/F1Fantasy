@@ -27,7 +27,7 @@ struct ManagersList: View{
         List{
             ForEach(Array(sortedManagers.enumerated()), id: \.element.id) { index, manager in
                 NavigationLink{
-                    //UserView(user: user)
+                    ManagerView(manager: manager, league: userData.selectedLeague!, event: userData.selectedLeague!.selectedEvent!, userData: userData)
                 } label: {
                     HStack{
                         Image(systemName: "\(index + 1).circle.fill")

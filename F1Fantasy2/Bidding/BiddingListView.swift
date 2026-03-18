@@ -74,8 +74,10 @@ struct DriverLabel: View{
                 )
             Text("\(driver.name)")
             Spacer()
-            GroupBox{
-                Text("$\(driver.total_bids)")
+            if(driver.total_bids != -1){
+                GroupBox{
+                    Text("$\(driver.total_bids)")
+                }
             }
         }
     }

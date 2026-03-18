@@ -200,6 +200,31 @@ app.get("/thisLeagueUser", (req, res) => {
   });
 })
 
+app.get('/eventLineup', (req, res) => {
+  console.log("Event Lineup");
+
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  const eventId = req.query.eventId;
+  const leagueId = req.query.leagueId;
+
+  let userId = -1
+  if(token){
+    userId = getUserID(token);
+  }
+  else{
+    userId = req.query.userId;
+  }
+
+  console.log(userId, leagueId, eventId)
+
+  const sql = "SELECT d.id AS driver_id, ed.id AS event_driver_id, d.name, d.car_number, d.team, ed.position, ed.points, -1 AS total_bids FROM user_drivers ud JOIN event_drivers ed ON ed.id = ud.event_driver_id JOIN drivers d ON d.id = ed.driver_id WHERE ud.league_id = ? AND ud.user_id = ? AND ud.event_id = ?;";
+  pool.query(sql, [leagueId, userId, eventId], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
+    res.json(result);
+  });
+})
+
 const port = process.env.PORT || 3000;
 app.listen(port);
 console.log("Listening on " + port)
