@@ -14,7 +14,22 @@ struct BiddingListView: View {
     @State private var refreshTask: Task<Void, Never>?
 
     var sortedDrivers: [Driver] {
-        event.drivers.sorted { $0.total_bids > $1.total_bids }
+        let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
+            lhs.total_bids > rhs.total_bids
+        }
+        return sorted
+    }
+    
+    var noBids: [Driver] {
+        return sortedDrivers.filter { (driver: Driver) in
+            driver.total_bids == 0
+        }
+    }
+    
+    var withBids: [Driver] {
+        return sortedDrivers.filter { (driver: Driver) in
+            driver.total_bids > 0
+        }
     }
     
     var body: some View {
@@ -22,11 +37,22 @@ struct BiddingListView: View {
             if #unavailable(iOS 26) {
                 HomeView.AccessoryView(selectedLeague: league)
             }
-            ForEach(sortedDrivers, id: \.id) { driver in
-                NavigationLink{
-                    DriverBiddingView(event: event, userData: userData, driver: driver)
-                } label: {
-                    DriverLabel(driver: driver)
+            Section(header: Text("Currently Bidding")) {
+                ForEach(withBids, id: \.id) { driver in
+                    NavigationLink{
+                        DriverBiddingView(event: event, userData: userData, driver: driver)
+                    } label: {
+                        DriverLabel(driver: driver)
+                    }
+                }
+            }
+            Section(header: Text("No Bids Placed")){
+                ForEach(noBids, id: \.id) { driver in
+                    NavigationLink{
+                        DriverBiddingView(event: event, userData: userData, driver: driver)
+                    } label: {
+                        DriverLabel(driver: driver)
+                    }
                 }
             }
         }
@@ -82,3 +108,4 @@ struct DriverLabel: View{
         }
     }
 }
+

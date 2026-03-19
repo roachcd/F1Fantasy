@@ -38,8 +38,14 @@ struct ManagerLineupList: View{
                             }
                         }
                         else{
-                            self.loading = false
-                            self.confirmed = false
+                            let network = Network()
+                            let response = await network.get(endpoint: "unofficialEventLineup", queryItems: [URLQueryItem(name: "leagueId", value: "\(league.id)"), URLQueryItem(name: "eventId", value: "\(event.id)"), URLQueryItem(name: "userId", value: "\(manager.id)")])
+                            if response.success{
+                                drivers = try JSONDecoder().decode([Driver].self, from: response.data!)
+                                print(drivers)
+                                self.loading = false
+                                self.confirmed = false
+                            }
                         }
                     }
                     catch{

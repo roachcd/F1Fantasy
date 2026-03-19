@@ -225,6 +225,77 @@ app.get('/eventLineup', (req, res) => {
   });
 })
 
+app.get('/unofficialEventLineup', (req, res) => {
+  console.log("Unofficial Event Lineup");
+
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  const eventId = req.query.eventId;
+  const leagueId = req.query.leagueId;
+
+  let userId = -1
+  if(token){
+    userId = getUserID(token);
+  }
+  else{
+    userId = req.query.userId;
+  }
+
+  const sql = `
+SELECT d.id as driver_id, event_driver_id, d.name, d.car_number, d.team, ed.position, ed.points, total_amount as total_bids
+FROM (
+	SELECT t1.user_id, t1.event_driver_id, t1.league_id, t1.total_amount
+	FROM (
+		SELECT
+			b.user_id,
+			b.event_driver_id,
+			b.league_id,
+			SUM(b.amount) AS total_amount,
+			MAX(b.created_at) AS last_bid_at,
+			MAX(b.id) AS last_bid_id
+		FROM bids b
+		JOIN event_drivers ed
+			ON ed.id = b.event_driver_id
+		WHERE ed.event_id = ?
+		GROUP BY b.user_id, b.event_driver_id, b.league_id
+	) t1
+	LEFT JOIN (
+		SELECT
+			b.user_id,
+			b.event_driver_id,
+			b.league_id,
+			SUM(b.amount) AS total_amount,
+			MAX(b.created_at) AS last_bid_at,
+			MAX(b.id) AS last_bid_id
+		FROM bids b
+		JOIN event_drivers ed
+			ON ed.id = b.event_driver_id
+		WHERE ed.event_id = ?
+		GROUP BY b.user_id, b.event_driver_id, b.league_id
+	) t2
+	ON t1.event_driver_id = t2.event_driver_id
+	AND t1.league_id = t2.league_id
+	AND (
+			t2.total_amount > t1.total_amount
+			OR (
+				t2.total_amount = t1.total_amount
+				AND t2.last_bid_at < t1.last_bid_at
+			)
+			OR (
+				t2.total_amount = t1.total_amount
+				AND t2.last_bid_at = t1.last_bid_at
+				AND t2.last_bid_id < t1.last_bid_id
+			)
+		)
+	WHERE t2.user_id IS NULL
+) w JOIN event_drivers ed on w.event_driver_id = ed.id JOIN drivers d on d.id = ed.driver_id where league_id = ? and user_id = ?;
+  `;
+  pool.query(sql, [eventId, eventId, leagueId, userId], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
+    res.json(result);
+  });
+})
+
 const port = process.env.PORT || 3000;
 app.listen(port);
 console.log("Listening on " + port)

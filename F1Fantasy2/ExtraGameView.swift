@@ -9,6 +9,26 @@ import SwiftUI
 
 struct ExtraGameView: View {
     var body: some View {
-        Text("ExtraGameView")
+        List{
+            Section(header: Text("Games")){
+                NavigationLink{
+                    
+                } label: {
+                    Text("Pole")
+                }
+                NavigationLink{
+                    
+                } label: {
+                    Text("Last Place")
+                }
+            }
+            Section(header: Text("Tools")){
+                NavigationLink{
+                    
+                } label: {
+                    Text("Convert points to cash")
+                }
+            }
+        }
     }
 }
