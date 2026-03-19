@@ -12,7 +12,8 @@ struct BiddingListView: View {
     @ObservedObject var event: Event
     @ObservedObject var userData: UserData
     @State private var refreshTask: Task<Void, Never>?
-
+    @State var didNotUpdate: Bool = true
+    
     var sortedDrivers: [Driver] {
         let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
             lhs.total_bids > rhs.total_bids
@@ -32,12 +33,32 @@ struct BiddingListView: View {
         }
     }
     
+    private var liveHeader: some View {
+        HStack{
+            Text("Currently Bidding")
+            Spacer();
+            if didNotUpdate {
+                ProgressView()
+            }
+            else{
+                Text("Live")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.red.opacity(0.15))
+                    .clipShape(Capsule())
+            }
+        }
+    }
+    
     var body: some View {
         List{
             if #unavailable(iOS 26) {
                 HomeView.AccessoryView(selectedLeague: league)
             }
-            Section(header: Text("Currently Bidding")) {
+            Section(header: liveHeader) {
                 ForEach(withBids, id: \.id) { driver in
                     NavigationLink{
                         DriverBiddingView(event: event, userData: userData, driver: driver)
@@ -74,8 +95,17 @@ struct BiddingListView: View {
         refreshTask = Task {
             while !Task.isCancelled {
                 do{
-                    _ = try await event.getDrivers()
+                    let success = try await withTimeout(.seconds(3)) {
+                        try await event.getDrivers()
+                    }
+                    if success{
+                        didNotUpdate = false
+                    }
+                    else{
+                        didNotUpdate = true
+                    }
                 }catch{
+                    didNotUpdate = true
                     print(error)
                 }
                 try? await Task.sleep(for: .seconds(5))

@@ -18,6 +18,7 @@ struct DriverBiddingView: View {
     @State var showClosedMessage = false
     @State var loading = true
     @State private var refreshTask: Task<Void, Never>?
+    @State private var didNotUpdate: Bool = true
 
     func getBids() async -> Bool{
         do{
@@ -44,6 +45,26 @@ struct DriverBiddingView: View {
         return date <= Date()   
     }
     
+    private var liveHeader: some View {
+        HStack{
+            Text("Bidding History")
+            Spacer();
+            if didNotUpdate {
+                ProgressView()
+            }
+            else{
+                Text("Live")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.red.opacity(0.15))
+                    .clipShape(Capsule())
+            }
+        }
+    }
+    
     var body: some View {
         VStack{
             HStack(spacing: 15){
@@ -57,12 +78,9 @@ struct DriverBiddingView: View {
                     )
                 Text(driver.name).font(Font.largeTitle)
             }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Bidding History")
-                    .font(.headline)
 
-                List {
+            List {
+                Section(header: liveHeader){
                     HStack {
                         Text("Manager")
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,7 +91,7 @@ struct DriverBiddingView: View {
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
-
+                    
                     ForEach(bids.reversed()) { bid in
                         HStack {
                             Text(verbatim: bid.manager_name)
@@ -95,10 +113,10 @@ struct DriverBiddingView: View {
                         }
                     }
                 }
-                .listStyle(.plain)
-                .task{
-                    _ = await getBids()
-                }
+            }
+            .listStyle(.plain)
+            .task{
+                _ = await getBids()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding()
@@ -186,7 +204,20 @@ struct DriverBiddingView: View {
 
         refreshTask = Task {
             while !Task.isCancelled {
-                _ = await getBids()
+                do{
+                    let success = try await withTimeout(.seconds(1)) {
+                        await getBids()
+                    }
+                    if success{
+                        didNotUpdate = false
+                    }
+                    else{
+                        didNotUpdate = true
+                    }
+                }catch{
+                    didNotUpdate = true
+                    print(error)
+                }
                 try? await Task.sleep(for: .seconds(1))
             }
         }

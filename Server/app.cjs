@@ -296,6 +296,27 @@ FROM (
   });
 })
 
+
+//ADMIN
+app.get("/drivers", (req, res) => {
+  console.log("All Drivers");
+
+  const sql = "select id as driver_id, name, car_number, team, -1 as cost, -1 as points from drivers;";
+  pool.query(sql, (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
+    res.json(result);
+  });
+})
+
+app.get('/allLeagues', (req, res) => {
+  console.log("All Leagues")
+  const sql = 'SELECT * FROM leagues';
+  pool.query(sql, (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    res.json(result);
+  });
+})
+
 const port = process.env.PORT || 3000;
 app.listen(port);
 console.log("Listening on " + port)
