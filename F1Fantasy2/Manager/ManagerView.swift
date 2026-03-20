@@ -9,14 +9,16 @@ import SwiftUI
 
 struct ManagerView: View{
     var manager: Manager
-    var league: League
-    var event: Event
     @ObservedObject var userData: UserData
     
     var body: some View{
         List{
             Text(manager.username).font(.title2).listRowSeparator(.hidden)
-            ManagerLineupList(manager: manager, league: league, event: event, userData: userData)
+            if let league = userData.selectedLeague{
+                if let event = league.selectedEvent{
+                    ManagerLineupList(manager: manager, league: league, event: event, userData: userData)
+                }
+            }
         }
     }
 }

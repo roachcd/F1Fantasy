@@ -10,7 +10,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var userData: UserData
+    @StateObject var userData = UserData()
     
     var body: some View {
         NavigationStack{
@@ -25,5 +25,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView().environmentObject(UserData())
+    ContentView()
 }

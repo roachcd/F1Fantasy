@@ -19,7 +19,7 @@ struct DriverBiddingView: View {
     @State var loading = true
     @State private var refreshTask: Task<Void, Never>?
     @State private var didNotUpdate: Bool = true
-
+    
     func getBids() async -> Bool{
         do{
             let network = Network()

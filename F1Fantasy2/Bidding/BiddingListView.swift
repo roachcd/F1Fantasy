@@ -15,10 +15,13 @@ struct BiddingListView: View {
     @State var didNotUpdate: Bool = true
     
     var sortedDrivers: [Driver] {
-        let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
-            lhs.total_bids > rhs.total_bids
+        if let event = league.selectedEvent{
+            let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
+                lhs.total_bids > rhs.total_bids
+            }
+            return sorted
         }
-        return sorted
+        return []
     }
     
     var noBids: [Driver] {

@@ -115,3 +115,4 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
         hasher.combine(name)
     }
 }
+

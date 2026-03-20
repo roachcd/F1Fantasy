@@ -10,7 +10,7 @@ import SwiftUI
 extension View {
     @ViewBuilder
     func applyGlassButtonStyleIfAvailable() -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26, *) {
             self.buttonStyle(.glass)
         } else {
             self.buttonStyle(.bordered)
