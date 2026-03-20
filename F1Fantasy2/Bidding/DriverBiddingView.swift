@@ -49,18 +49,20 @@ struct DriverBiddingView: View {
         HStack{
             Text("Bidding History")
             Spacer();
-            if didNotUpdate {
-                ProgressView()
-            }
-            else{
-                Text("Live")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.red)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.red.opacity(0.15))
-                    .clipShape(Capsule())
+            if event.status == 2 {
+                if didNotUpdate {
+                    ProgressView()
+                }
+                else{
+                    Text("Live")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.red.opacity(0.15))
+                        .clipShape(Capsule())
+                }
             }
         }
     }
@@ -202,23 +204,25 @@ struct DriverBiddingView: View {
     private func startAutoRefresh() {
         refreshTask?.cancel()
 
-        refreshTask = Task {
-            while !Task.isCancelled {
-                do{
-                    let success = try await withTimeout(.seconds(1)) {
-                        await getBids()
-                    }
-                    if success{
-                        didNotUpdate = false
-                    }
-                    else{
+        if event.status == 2{
+            refreshTask = Task {
+                while !Task.isCancelled {
+                    do{
+                        let success = try await withTimeout(.seconds(1)) {
+                            await getBids()
+                        }
+                        if success{
+                            didNotUpdate = false
+                        }
+                        else{
+                            didNotUpdate = true
+                        }
+                    }catch{
                         didNotUpdate = true
+                        print(error)
                     }
-                }catch{
-                    didNotUpdate = true
-                    print(error)
+                    try? await Task.sleep(for: .seconds(1))
                 }
-                try? await Task.sleep(for: .seconds(1))
             }
         }
     }

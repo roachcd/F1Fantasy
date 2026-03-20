@@ -40,78 +40,99 @@ struct BiddingListView: View {
         HStack{
             Text("Currently Bidding")
             Spacer();
-            if didNotUpdate {
-                ProgressView()
-            }
-            else{
-                Text("Live")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.red)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.red.opacity(0.15))
-                    .clipShape(Capsule())
+            if let league = userData.selectedLeague {
+                if let event = league.selectedEvent {
+                    if(event.status == 2){
+                        if didNotUpdate {
+                            ProgressView()
+                        }
+                        else{
+                            Text("Live")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.red.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
             }
         }
     }
     
     var body: some View {
-        List{
-            if #unavailable(iOS 26) {
-                HomeView.AccessoryView(selectedLeague: league)
-            }
-            Section(header: liveHeader) {
-                ForEach(withBids, id: \.id) { driver in
-                    NavigationLink{
-                        DriverBiddingView(event: event, userData: userData, driver: driver)
-                    } label: {
-                        DriverLabel(driver: driver)
+        if let league = userData.selectedLeague{
+            if let event = league.selectedEvent{
+                List{
+                    if #unavailable(iOS 26) {
+                        HomeView.AccessoryView(selectedLeague: league)
+                    }
+                    Section(header: liveHeader) {
+                        ForEach(withBids, id: \.id) { driver in
+                            NavigationLink{
+                                DriverBiddingView(event: event, userData: userData, driver: driver)
+                            } label: {
+                                DriverLabel(driver: driver)
+                            }
+                        }
+                    }
+                    Section(header: Text("No Bids Placed")){
+                        ForEach(noBids, id: \.id) { driver in
+                            NavigationLink{
+                                DriverBiddingView(event: event, userData: userData, driver: driver)
+                            } label: {
+                                DriverLabel(driver: driver)
+                            }
+                        }
                     }
                 }
-            }
-            Section(header: Text("No Bids Placed")){
-                ForEach(noBids, id: \.id) { driver in
-                    NavigationLink{
-                        DriverBiddingView(event: event, userData: userData, driver: driver)
-                    } label: {
-                        DriverLabel(driver: driver)
+                .onAppear {
+                    Task {
+                        await event.load()
                     }
                 }
+                .onAppear {
+                    startAutoRefresh()
+                }
+                .onDisappear {
+                    refreshTask?.cancel()
+                }
+                .onChange(of: event){
+                    refreshTask?.cancel()
+                    didNotUpdate = true
+                    startAutoRefresh()
+                }
             }
-        }
-        .onAppear {
-            Task {
-                await event.load()
-            }
-        }
-        .onAppear {
-            startAutoRefresh()
-        }
-        .onDisappear {
-            refreshTask?.cancel()
         }
     }
     private func startAutoRefresh() {
         refreshTask?.cancel()
 
-        refreshTask = Task {
-            while !Task.isCancelled {
-                do{
-                    let success = try await withTimeout(.seconds(3)) {
-                        try await event.getDrivers()
+        if let league = userData.selectedLeague {
+            if let event = league.selectedEvent {
+                if event.status == 2{
+                    refreshTask = Task {
+                        while !Task.isCancelled {
+                            do{
+                                let success = try await withTimeout(.seconds(3)) {
+                                    try await event.getDrivers()
+                                }
+                                if success{
+                                    didNotUpdate = false
+                                }
+                                else{
+                                    didNotUpdate = true
+                                }
+                            }catch{
+                                didNotUpdate = true
+                                print(error)
+                            }
+                            try? await Task.sleep(for: .seconds(5))
+                        }
                     }
-                    if success{
-                        didNotUpdate = false
-                    }
-                    else{
-                        didNotUpdate = true
-                    }
-                }catch{
-                    didNotUpdate = true
-                    print(error)
                 }
-                try? await Task.sleep(for: .seconds(5))
             }
         }
     }

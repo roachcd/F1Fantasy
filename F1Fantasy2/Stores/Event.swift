@@ -15,12 +15,14 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject{
     var event_date: String
     var bidding_closes_at: String
     var status: Int
+    var country: String
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case event_date
         case bidding_closes_at
         case status
+        case country
     }
     
     @Published var drivers: [Driver] = []
@@ -35,7 +37,7 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject{
                 }
                 return date <= Date()
             }
-            if closed{status = 1}
+            if closed && status != 3 {status = 1}
         }
         catch{
             print(error)

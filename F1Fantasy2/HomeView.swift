@@ -152,7 +152,7 @@ struct HomeView: View {
 
         var body: some View {
             List {
-                ForEach(league.events){event in
+                ForEach(league.events, id: \.id){event in
                     Button{
                         league.selectedEvent = event
                         dismiss()
@@ -161,25 +161,50 @@ struct HomeView: View {
                             league.selectedEvent = event
                         }
                     } label: {
-                        Text(event.name)
+                        HStack(spacing: 12) {
+                            Image(event.country)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 36, height: 24)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(event.name)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                    .multilineTextAlignment(.leading)
+
+                                HStack(spacing: 6) {
+                                    Image(systemName: statusIcon(for: event.status))
+                                    Text(statusText(for: event.status))
+                                }
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+                        }
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
         func statusText(for status: Int) -> String {
             switch status {
-            case 0: return "Unlocked"
+            case 2: return "Unlocked"
             case 1: return "Locked"
-            case 2: return "Finished"
+            case 3: return "Finished"
             default: return "Unknown"
             }
         }
 
         func statusIcon(for status: Int) -> String {
             switch status {
-            case 0: return "lock.open.fill"
+            case 2: return "lock.open.fill"
             case 1: return "lock.fill"
-            case 2: return "flag.checkered"
+            case 3: return "flag.checkered"
             default: return "questionmark.circle"
             }
         }
