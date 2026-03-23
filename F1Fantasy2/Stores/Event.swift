@@ -26,11 +26,12 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject{
     }
     
     @Published var drivers: [Driver] = []
+    @StateObject var userData = UserData()
     
-    func load() async -> Bool{
+    func load(leagueId: Int) async -> Bool{
         var success = true
         do{
-            success = try await getDrivers()
+            success = try await getDrivers(leagueId: leagueId)
             var closed: Bool {
                 guard let date = TimeFormatter.shared.date(from: bidding_closes_at) else {
                     return false
@@ -45,10 +46,10 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject{
         return success
     }
     
-    func getDrivers() async throws -> Bool{
+    func getDrivers(leagueId: Int) async throws -> Bool{
         let network = Network()
         print(id)
-        let response = await network.get(endpoint: "eventDrivers", queryItems: [URLQueryItem(name: "eventId", value: "\(id)")])
+        let response = await network.get(endpoint: "eventDrivers", queryItems: [URLQueryItem(name: "eventId", value: "\(id)"), URLQueryItem(name: "leagueId", value: "\(leagueId)")])
         if response.success{
             let decoded = try JSONDecoder().decode([Driver].self, from: response.data!)
             await MainActor.run {

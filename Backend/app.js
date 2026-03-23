@@ -128,6 +128,8 @@ app.get("/eventDrivers", (req, res) => {
   console.log("Event Drivers");
 
   const eventId = req.query.eventId;
+  const league_id = req.query.leagueId;
+  console.log(league_id)
 
   const sql = `
   SELECT 
@@ -144,6 +146,7 @@ JOIN event_drivers ed
     ON d.id = ed.driver_id
 LEFT JOIN bids b 
     ON b.event_driver_id = ed.id
+  AND b.league_id = ?
 WHERE ed.event_id = ?
 GROUP BY 
     d.id,
@@ -153,7 +156,7 @@ GROUP BY
     d.team,
     ed.position,
     ed.points;`;
-  pool.query(sql, [eventId], (err, result) => {
+  pool.query(sql, [league_id, eventId], (err, result) => {
     if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
     res.json(result);
   });
@@ -296,6 +299,28 @@ FROM (
   });
 })
 
+app.get('/findLeague', (req, res) => {
+  console.log("Find League");
+  const league_code = req.query.leagueCode;
+
+  const sql = 'select id, name, code from leagues where code = ?;';
+  pool.query(sql, [league_code], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    res.json(result);
+  });
+})
+
+app.post('/joinLeague', (req, res) => {
+  console.log("Join League");
+  const { league_id, username, token } = req.body;
+  userId = getUserID(token);
+
+  const sql = 'INSERT into user_leagues (user_id, league_id, username) VALUES (?, ?, ?)';
+  pool.query(sql, [userId, league_id, username], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    res.json(result);
+  });
+})
 
 //ADMIN
 app.get("/drivers", (req, res) => {

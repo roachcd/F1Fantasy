@@ -5,8 +5,6 @@
 //  Created by Chase Roach on 3/14/26.
 //
 
-//TODO: Add users to database here
-
 import SwiftUI
 
 struct RegisterView: View{
@@ -64,11 +62,11 @@ struct RegisterView: View{
                 }label: {
                     if loading{
                         ProgressView()
+                            .frame(width: 150, height: 36)
                     }
                     else{
                         Text("Create Account")
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 36)
+                            .frame(width: 150, height: 36)
                     }
                 }
                 .buttonStyle(.borderedProminent)

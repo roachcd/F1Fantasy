@@ -57,7 +57,7 @@ struct HomeView: View {
                 .tag(0)
             
             if let event = userData.selectedLeague?.selectedEvent{
-                BiddingListView(league: userData.selectedLeague!, event: event, userData: userData)
+                BiddingListView(event: event, userData: userData)
                     .tabItem { Label("Bidding", systemImage: "flag.pattern.checkered") }
                     .tag(1)
             }
@@ -83,7 +83,7 @@ struct HomeView: View {
         }
         .onChange(of: selectedTab){
             Task{
-                _ = await userData.selectedLeague!.selectedEvent!.load()
+                _ = await userData.selectedLeague!.selectedEvent!.load(leagueId: userData.selectedLeague!.id)
             }
         }
     }
@@ -97,7 +97,7 @@ struct HomeView: View {
                     Label("Account", systemImage: "person.fill")
                 }
                 NavigationLink {
-                    //JoinLeague()
+                    JoinLeagueView(userData: userData)
                 } label: {
                     Label("Join League", systemImage: "plus.app.fill")
                 }
@@ -106,10 +106,9 @@ struct HomeView: View {
                 ForEach(userData.leagues, id: \.id) { league in
                     Button {
                         Task{
-                            DispatchQueue.main.async {
-                                userData.selectedLeague = league
-                                selectedTab = 0
-                            }
+                            _ = await league.load(token: userData.token)
+                            userData.selectedLeague = league
+                            selectedTab = 0
                         }
                     } label: {
                         Text(league.name)
@@ -157,7 +156,7 @@ struct HomeView: View {
                         league.selectedEvent = event
                         dismiss()
                         Task{
-                            await event.load()
+                            await event.load(leagueId: league.id)
                             league.selectedEvent = event
                         }
                     } label: {

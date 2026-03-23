@@ -128,12 +128,12 @@ struct DriverBiddingView: View {
                 if closed || userData.selectedLeague!.selectedEvent?.status == 1{
                     EmptyView()
                 }
-                else if userData.selectedLeague!.thisUser.money == 0 {
+                else if userData.selectedLeague!.thisUser.money <= 0 {
                     Text("Out of money")
                 }
                 else{
                     Picker("$", selection: $selectedBid){
-                        ForEach(5...userData.selectedLeague!.thisUser.money, id: \.self) { price in
+                        ForEach(5...userData.selectedLeague!.thisUser.money - driver.total_bids, id: \.self) { price in
                             Text("$\(price)")
                                 .tag(price)
                         }
@@ -210,6 +210,8 @@ struct DriverBiddingView: View {
                     do{
                         let success = try await withTimeout(.seconds(1)) {
                             await getBids()
+                            try await userData.selectedLeague?.selectedEvent?.getDrivers(leagueId: userData.selectedLeague!.id)
+                            return true
                         }
                         if success{
                             didNotUpdate = false

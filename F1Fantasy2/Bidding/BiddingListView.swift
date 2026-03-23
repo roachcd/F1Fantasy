@@ -8,18 +8,19 @@
 import SwiftUI
 
 struct BiddingListView: View {
-    @ObservedObject var league: League
     @ObservedObject var event: Event
     @ObservedObject var userData: UserData
     @State private var refreshTask: Task<Void, Never>?
     @State var didNotUpdate: Bool = true
     
     var sortedDrivers: [Driver] {
-        if let event = league.selectedEvent{
-            let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
-                lhs.total_bids > rhs.total_bids
+        if let league = userData.selectedLeague{
+            if let event = league.selectedEvent{
+                let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
+                    lhs.total_bids > rhs.total_bids
+                }
+                return sorted
             }
-            return sorted
         }
         return []
     }
@@ -90,7 +91,7 @@ struct BiddingListView: View {
                 }
                 .onAppear {
                     Task {
-                        await event.load()
+                        await event.load(leagueId: league.id)
                     }
                 }
                 .onAppear {
@@ -103,6 +104,11 @@ struct BiddingListView: View {
                     refreshTask?.cancel()
                     didNotUpdate = true
                     startAutoRefresh()
+                }
+                .onChange(of: league){
+                    for driver in sortedDrivers{
+                        print(driver.total_bids)
+                    }
                 }
             }
         }
@@ -117,7 +123,9 @@ struct BiddingListView: View {
                         while !Task.isCancelled {
                             do{
                                 let success = try await withTimeout(.seconds(3)) {
-                                    try await event.getDrivers()
+                                    try await event.getDrivers(leagueId: league.id)
+                                    await userData.updateThisUser()
+                                    return true
                                 }
                                 if success{
                                     didNotUpdate = false

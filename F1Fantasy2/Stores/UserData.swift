@@ -96,14 +96,27 @@ final class UserData: ObservableObject{
                 print(error)
             }
             
-            self.selectedLeague = self.leagues.first
-            let success = await self.selectedLeague?.load(token: token)
-            if success!{
-                return true
+            if let selectedLeague = self.leagues.first{
+                let success = await selectedLeague.load(token: token)
+                if success{
+                    self.selectedLeague = selectedLeague
+                    return true
+                }
             }
-            return false
+            return true
         }
         else{
+            return false
+        }
+    }
+    
+    func updateThisUser() async -> Bool{
+        do{
+            _ = try await selectedLeague!.getThisUser(token: token)
+            return true
+        }
+        catch{
+            print(error)
             return false
         }
     }

@@ -10,6 +10,7 @@ import SwiftUI
 struct LoginView: View{
     @State private var email: String = ""
     @State private var password: String = ""
+    @State private var incorrect: Bool = false
     @ObservedObject var userData: UserData
     @State var loading: Bool = false
     
@@ -38,8 +39,13 @@ struct LoginView: View{
                             .stroke(.blue, lineWidth: 2)
                     }
             }
-            Spacer()
             HStack{
+                if incorrect{
+                    Text("Invalid username or password").foregroundColor(.red)
+                }
+            }.frame(height: 10)
+            Spacer()
+            HStack(spacing: 20){
                 Button{
                     Task{
                         loading = true
@@ -47,25 +53,26 @@ struct LoginView: View{
                         if success{
                             loading = false
                         }
+                        else{
+                            loading = false
+                            incorrect = true
+                        }
                     }
                 }label: {
                     if loading{
                         ProgressView()
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 36) //TODO: Annouce incorrect details
+                            .frame(width: 110, height: 36)
                     }
                     else{
                         Text("Login")
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 36)
+                            .frame(width: 110, height: 36)
                     }
                 }.buttonStyle(.borderedProminent)
                 NavigationLink {
                     RegisterView()
                 }label: {
                     Text("Create Account")
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 36)
+                        .frame(width: 160, height: 36)
                 }.buttonStyle(.bordered)
             }
         }.padding()

@@ -5,8 +5,6 @@
 //  Created by Chase Roach on 3/14/26.
 //
 
-//TODO: Update money at the end of every event (cron job) and calculate the value the user has in the moment locally. Currently, users lost money on bids they didn't win
-
 import SwiftUI
 
 struct ContentView: View {
@@ -15,7 +13,12 @@ struct ContentView: View {
     var body: some View {
         NavigationStack{
             if userData.isLoggedIn {
-                HomeView(userData: userData)
+                if userData.leagues.isEmpty{
+                    JoinLeagueView(userData: userData)
+                }
+                else{
+                    HomeView(userData: userData)
+                }
             }
             else{
                 LoginView(userData: userData)

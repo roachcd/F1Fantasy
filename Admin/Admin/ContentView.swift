@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+//TODO: Positions and update values
+
 struct ContentView: View {
     @EnvironmentObject var appData: AppData
     

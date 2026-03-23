@@ -19,6 +19,37 @@ final class Driver: Identifiable, Hashable, Codable{
     var position: Int
     var points: Int
     var total_bids: Int
+    enum CodingKeys: String, CodingKey {
+        case id
+        case driver_id
+        case event_driver_id
+        case name
+        case car_number
+        case team
+        case position
+        case total_bids
+        case points
+    }
+    
+    @Published var bids: [Bid] = []
+    var event_id: Int = -1
+    
+    func getBids() async -> Bool{
+        do{
+            let network = Network()
+            let response = await network.get(endpoint: "driverBids", queryItems: [URLQueryItem(name: "eventDriverId", value: "\(event_driver_id)"), URLQueryItem(name: "leagueId", value: "\(event_id)")])
+            if response.success{
+                bids = try JSONDecoder().decode([Bid].self, from: response.data!)
+                print(bids)
+                return true
+            }
+            return false
+        }
+        catch{
+            print(error)
+            return false
+        }
+    }
     
     // Conformance to Equatable
     static func == (lhs: Driver, rhs: Driver) -> Bool {

@@ -95,7 +95,7 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
                 .event
             
             print(self.selectedEvent ?? "No Event")
-            if await self.selectedEvent!.load(){
+            if await self.selectedEvent!.load(leagueId: id){
                 return true
             }
             return false
