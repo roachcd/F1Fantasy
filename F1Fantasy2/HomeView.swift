@@ -57,9 +57,10 @@ struct HomeView: View {
                 .tag(0)
             
             if let event = userData.selectedLeague?.selectedEvent{
-                BiddingListView(event: event, userData: userData)
+                BiddingListView(league: userData.selectedLeague!, event: event, userData: userData)
                     .tabItem { Label("Bidding", systemImage: "flag.pattern.checkered") }
                     .tag(1)
+                    .id(event.id)
             }
 
             ExtraGameView()

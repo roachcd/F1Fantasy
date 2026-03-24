@@ -9,7 +9,7 @@ import SwiftUI
 internal import Combine
 
 @MainActor
-final class Event: Identifiable, Hashable, Codable, ObservableObject{
+final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable{
     var id: Int
     var name: String
     var event_date: String
@@ -51,10 +51,7 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject{
         print(id)
         let response = await network.get(endpoint: "eventDrivers", queryItems: [URLQueryItem(name: "eventId", value: "\(id)"), URLQueryItem(name: "leagueId", value: "\(leagueId)")])
         if response.success{
-            let decoded = try JSONDecoder().decode([Driver].self, from: response.data!)
-            await MainActor.run {
-                self.drivers = decoded
-            }
+            drivers = try JSONDecoder().decode([Driver].self, from: response.data!)
             print(drivers)
             return true
         }

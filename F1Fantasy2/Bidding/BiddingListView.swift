@@ -8,19 +8,18 @@
 import SwiftUI
 
 struct BiddingListView: View {
+    @ObservedObject var league: League
     @ObservedObject var event: Event
     @ObservedObject var userData: UserData
     @State private var refreshTask: Task<Void, Never>?
     @State var didNotUpdate: Bool = true
     
     var sortedDrivers: [Driver] {
-        if let league = userData.selectedLeague{
-            if let event = league.selectedEvent{
-                let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
-                    lhs.total_bids > rhs.total_bids
-                }
-                return sorted
+        if let event = league.selectedEvent{
+            let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
+                lhs.total_bids > rhs.total_bids
             }
+            return sorted
         }
         return []
     }
@@ -100,15 +99,12 @@ struct BiddingListView: View {
                 .onDisappear {
                     refreshTask?.cancel()
                 }
-                .onChange(of: event){
+                .onChange(of: event.id){
                     refreshTask?.cancel()
                     didNotUpdate = true
                     startAutoRefresh()
-                }
-                .onChange(of: league){
-                    for driver in sortedDrivers{
-                        print(driver.total_bids)
-                    }
+                    print(sortedDrivers)
+                    print("Event Changed")
                 }
             }
         }

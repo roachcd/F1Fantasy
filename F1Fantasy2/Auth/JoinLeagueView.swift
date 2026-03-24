@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+//TODO: Joining league does not dismiss
 struct JoinLeague: Codable, Identifiable, Hashable {
     var id: Int
     var name: String
