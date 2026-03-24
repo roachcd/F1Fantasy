@@ -128,10 +128,13 @@ struct DriverBiddingView: View {
                 if closed || userData.selectedLeague!.selectedEvent?.status == 1{
                     EmptyView()
                 }
-                else if userData.selectedLeague!.thisUser.money <= 0 {
-                    Text("Out of money")
+                else if userData.selectedLeague!.thisUser.money - driver.total_bids <= 5 {
+                    Text("Not enough money")
                 }
-                else{
+                else if !loading && !bids.isEmpty && bids.last!.manager_name == userData.selectedLeague!.thisUser.username{
+                    Text("You have the current bid")
+                }
+                else if !loading{
                     Picker("$", selection: $selectedBid){
                         ForEach(5...userData.selectedLeague!.thisUser.money - driver.total_bids, id: \.self) { price in
                             Text("$\(price)")

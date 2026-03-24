@@ -5,6 +5,8 @@
 //  Created by Chase Roach on 3/14/26.
 //
 
+//TODO: Fee for getting closer to event
+
 import SwiftUI
 
 struct HomeView: View {
