@@ -56,6 +56,7 @@ class Network {
             let (data, response) = try await URLSession.shared.data(for: request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 500
             if status == 200 || status == 201 { return Response(data: data, response: response, success: true)}
+            print(String(data: data, encoding: .utf8))
             return Response(data: nil, response: response, success: false)
         } catch {
             print(error)

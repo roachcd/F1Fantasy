@@ -40,7 +40,6 @@ final class Driver: Identifiable, Hashable, Codable{
             let response = await network.get(endpoint: "driverBids", queryItems: [URLQueryItem(name: "eventDriverId", value: "\(event_driver_id)"), URLQueryItem(name: "leagueId", value: "\(event_id)")])
             if response.success{
                 bids = try JSONDecoder().decode([Bid].self, from: response.data!)
-                print(bids)
                 return true
             }
             return false

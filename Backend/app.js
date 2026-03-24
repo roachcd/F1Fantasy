@@ -177,10 +177,10 @@ app.get("/driverBids", (req, res) => {
 
 app.post("/placeBid", (req, res) => {
   console.log("Place Bid")
-  const { token, event_driver_id, amount, league_id } = req.body;
+  const { token, event_driver_id, amount, league_id, fee } = req.body;
   const userID = getUserID(token)
-  const sql = 'INSERT INTO bids (user_id, event_driver_id, league_id, amount) VALUES (?, ?, ?, ?);';
-  pool.query(sql, [userID, event_driver_id, league_id, amount], (err, result) => {
+  const sql = 'INSERT INTO bids (user_id, event_driver_id, league_id, amount, fee) VALUES (?, ?, ?, ?, ?);';
+  pool.query(sql, [userID, event_driver_id, league_id, amount, fee], (err, result) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Success!' });
   });

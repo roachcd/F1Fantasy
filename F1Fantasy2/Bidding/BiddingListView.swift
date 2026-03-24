@@ -69,6 +69,11 @@ struct BiddingListView: View {
                     if #unavailable(iOS 26) {
                         HomeView.AccessoryView(selectedLeague: league)
                     }
+                    Label {
+                        Text("Bidding Fee: $\(Fee.shared.fee(event: event))")
+                    } icon: {
+                        Image(systemName: "dollarsign.gauge.chart.leftthird.topthird.rightthird", variableValue: Fee.shared.percent(event: event))
+                    }
                     Section(header: liveHeader) {
                         ForEach(withBids, id: \.id) { driver in
                             NavigationLink{
@@ -103,7 +108,6 @@ struct BiddingListView: View {
                     refreshTask?.cancel()
                     didNotUpdate = true
                     startAutoRefresh()
-                    print(sortedDrivers)
                     print("Event Changed")
                 }
             }

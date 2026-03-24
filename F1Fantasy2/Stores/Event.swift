@@ -14,6 +14,7 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable{
     var name: String
     var event_date: String
     var bidding_closes_at: String
+    var bidding_starts_at: String
     var status: Int
     var country: String
     enum CodingKeys: String, CodingKey {
@@ -21,6 +22,7 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable{
         case name
         case event_date
         case bidding_closes_at
+        case bidding_starts_at
         case status
         case country
     }
@@ -52,7 +54,6 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable{
         let response = await network.get(endpoint: "eventDrivers", queryItems: [URLQueryItem(name: "eventId", value: "\(id)"), URLQueryItem(name: "leagueId", value: "\(leagueId)")])
         if response.success{
             drivers = try JSONDecoder().decode([Driver].self, from: response.data!)
-            print(drivers)
             return true
         }
         return false

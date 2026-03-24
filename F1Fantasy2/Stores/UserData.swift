@@ -90,7 +90,6 @@ final class UserData: ObservableObject{
             do{
                 let leagues = try JSONDecoder().decode([League].self, from: response.data!)
                 self.leagues = leagues
-                print(self.leagues)
             }
             catch {
                 print(error)

@@ -51,7 +51,6 @@ struct RegisterView: View{
                     Task{
                         let response = await network.post(endpoint: "register", body: ["email": email, "password": password])
                         if response.success{
-                            print(response.data!)
                             dismiss()
                             loading = false
                         }

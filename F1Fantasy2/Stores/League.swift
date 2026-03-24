@@ -70,7 +70,6 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
         if response.success{
             let managers = try JSONDecoder().decode([Manager].self, from: response.data!)
             self.managers = managers
-            print(self.managers)
             return true
         }
         return false

@@ -19,6 +19,10 @@ struct DriverBiddingView: View {
     @State var loading = true
     @State private var refreshTask: Task<Void, Never>?
     @State private var didNotUpdate: Bool = true
+
+    private var fee: Int{
+        return Fee.shared.fee(event: event)
+    }
     
     func getBids() async -> Bool{
         do{
@@ -26,7 +30,6 @@ struct DriverBiddingView: View {
             let response = await network.get(endpoint: "driverBids", queryItems: [URLQueryItem(name: "eventDriverId", value: "\(driver.event_driver_id)"), URLQueryItem(name: "leagueId", value: "\(userData.selectedLeague!.id)")])
             if response.success{
                 bids = try JSONDecoder().decode([Bid].self, from: response.data!)
-                print(bids)
                 loading = false
                 return true
             }
@@ -128,11 +131,11 @@ struct DriverBiddingView: View {
                 if closed || userData.selectedLeague!.selectedEvent?.status == 1{
                     EmptyView()
                 }
-                else if userData.selectedLeague!.thisUser.money - driver.total_bids <= 5 {
-                    Text("Not enough money")
-                }
                 else if !loading && !bids.isEmpty && bids.last!.manager_name == userData.selectedLeague!.thisUser.username{
                     Text("You have the current bid")
+                }
+                else if userData.selectedLeague!.thisUser.money - driver.total_bids <= 5 {
+                    Text("Not enough money")
                 }
                 else if !loading{
                     Picker("$", selection: $selectedBid){
@@ -162,33 +165,11 @@ struct DriverBiddingView: View {
                         Text("Bid")
                             .padding(.vertical, 10)
                             .padding(.horizontal, 36)
-                    }.buttonStyle(.borderedProminent)
-                        .alert("Place Bid?", isPresented: $showBidConfirmation) {
-                            Button("Cancel", role: .cancel) { }
-                            Button("Confirm") {
-                                Task{
-                                    var closed: Bool {
-                                        guard let date = TimeFormatter.shared.date(from: event.bidding_closes_at) else {
-                                            return false
-                                        }
-                                        return date <= Date()
-                                    }
-                                    if closed{
-                                        showClosedMessage = true
-                                    }
-                                    else{
-                                        let network = Network()
-                                        let response = await network.post(endpoint: "placeBid", body: ["token": userData.token, "event_driver_id": driver.event_driver_id, "league_id": "\(userData.selectedLeague!.id)", "amount": "\(selectedBid)"])
-                                        if response.success{
-                                            userData.selectedLeague!.thisUser.money -= selectedBid
-                                            _ = await getBids()
-                                        }
-                                    }
-                                }
-                            }
-                        } message: {
-                            Text("Are you sure you want to bid $\(selectedBid) on \(driver.name)?")
-                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .sheet(isPresented: $showBidConfirmation){
+                        bidConfirmation
+                    }
                 }
             }.padding()
                 .alert("Bidding Closed", isPresented: $showClosedMessage) {
@@ -203,6 +184,65 @@ struct DriverBiddingView: View {
         .onDisappear {
             refreshTask?.cancel()
         }
+    }
+    var bidConfirmation: some View{
+        VStack(spacing: 16) {
+            Spacer()
+            
+            Text("Place Bid").font(.title)
+
+            Spacer()
+            
+            List {
+                Text(driver.name).fontWeight(.bold)
+                Text("Bid: $\(selectedBid)")
+                Text("Fee: $\(Fee.shared.fee(event: event))")
+                Text("Total: $\(Fee.shared.fee(event: event) + selectedBid)")
+            }
+            .frame(height: .infinity)
+            .scrollDisabled(true)
+            .listStyle(.plain)
+
+            Text("Are you sure you want to bid $\(selectedBid) on \(driver.name)?").font(.caption)
+
+            Spacer()
+            
+            HStack {
+                Button{
+                    Task{
+                        var closed: Bool {
+                            guard let date = TimeFormatter.shared.date(from: event.bidding_closes_at) else {
+                                return false
+                            }
+                            return date <= Date()
+                        }
+                        if closed{
+                            showClosedMessage = true
+                        }
+                        else{
+                            let network = Network()
+                            let response = await network.post(endpoint: "placeBid", body: ["token": userData.token, "event_driver_id": driver.event_driver_id, "league_id": "\(userData.selectedLeague!.id)", "amount": "\(selectedBid)", "fee" : "\(Fee.shared.fee(event: event))"])
+                            if response.success{
+                                userData.selectedLeague!.thisUser.money -= selectedBid + Fee.shared.fee(event: event)
+                                _ = await getBids()
+                                showBidConfirmation = false
+                            }
+                        }
+                    }
+                } label: {
+                    Text("Confirm")
+                        .frame(width: 160, height: 36)
+                }.buttonStyle(.borderedProminent)
+                
+                Button {
+                    showBidConfirmation = false
+                } label: {
+                    Text("Cancel")
+                        .frame(width: 110, height: 36)
+                }.buttonStyle(.bordered)
+            }
+        }
+        .padding()
     }
     private func startAutoRefresh() {
         refreshTask?.cancel()
@@ -232,3 +272,4 @@ struct DriverBiddingView: View {
         }
     }
 }
+
