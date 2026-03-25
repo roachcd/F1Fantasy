@@ -15,6 +15,7 @@ final class UserData: ObservableObject{
     @Published var token: String = ""
     @Published var leagues: [League] = []
     @Published var selectedLeague: League? = nil
+    @Published var isLaunching: Bool = true
     private let network: Network = Network()
     
     init(){
@@ -22,6 +23,7 @@ final class UserData: ObservableObject{
             if await loginFromKeychain(){
                 isLoggedIn = true
             }
+            isLaunching = false
         }
     }
     
