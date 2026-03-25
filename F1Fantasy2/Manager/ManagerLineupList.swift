@@ -5,8 +5,6 @@
 //  Created by Chase Roach on 3/18/26.
 //
 
-//TODO: User lineups need to be updated to work with new money system, shows incorrect drivers
-
 import SwiftUI
 
 struct ManagerLineupList: View{
