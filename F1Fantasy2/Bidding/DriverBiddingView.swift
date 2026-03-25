@@ -19,10 +19,7 @@ struct DriverBiddingView: View {
     @State var loading = true
     @State private var refreshTask: Task<Void, Never>?
     @State private var didNotUpdate: Bool = true
-
-    private var fee: Int{
-        return Fee.shared.fee(event: event)
-    }
+    @State private var showFeeInfo = false
     
     func getBids() async -> Bool{
         do{
@@ -196,8 +193,19 @@ struct DriverBiddingView: View {
             List {
                 Text(driver.name).fontWeight(.bold)
                 Text("Bid: $\(selectedBid)")
-                Text("Fee: $\(Fee.shared.fee(event: event))")
-                Text("Total: $\(Fee.shared.fee(event: event) + selectedBid)")
+                HStack{
+                    //Image(systemName: "dollarsign.gauge.chart.leftthird.topthird.rightthird", variableValue: Fee.shared.percent(event: event)).foregroundStyle(.blue)
+                    Text("Bidding Fee: $\(Fee.shared.fee(event: event, amount: driver.total_bids+selectedBid))")
+                    Spacer()
+                    Button{
+                        showFeeInfo = true
+                    } label: {
+                        Image(systemName: "info.circle").foregroundStyle(.secondary)
+                    }
+                }.sheet(isPresented: $showFeeInfo){
+                    FeeInfo()
+                }
+                Text("Total: $\(Fee.shared.fee(event: event, amount: driver.total_bids+selectedBid) + selectedBid)")
             }
             .frame(height: .infinity)
             .scrollDisabled(true)
@@ -221,9 +229,9 @@ struct DriverBiddingView: View {
                         }
                         else{
                             let network = Network()
-                            let response = await network.post(endpoint: "placeBid", body: ["token": userData.token, "event_driver_id": driver.event_driver_id, "league_id": "\(userData.selectedLeague!.id)", "amount": "\(selectedBid)", "fee" : "\(Fee.shared.fee(event: event))"])
+                            let response = await network.post(endpoint: "placeBid", body: ["token": userData.token, "event_driver_id": driver.event_driver_id, "league_id": "\(userData.selectedLeague!.id)", "amount": "\(selectedBid)", "fee" : "\(Fee.shared.fee(event: event, amount: driver.total_bids+selectedBid))"])
                             if response.success{
-                                userData.selectedLeague!.thisUser.money -= selectedBid + Fee.shared.fee(event: event)
+                                userData.selectedLeague!.thisUser.money -= selectedBid + Fee.shared.fee(event: event, amount: driver.total_bids+selectedBid)
                                 _ = await getBids()
                                 showBidConfirmation = false
                             }

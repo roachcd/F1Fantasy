@@ -10,31 +10,31 @@ import Foundation
 struct Fee {
     static let shared = Fee()
     
-    func percent(event: Event) -> Double{
+    //[Days before close : percent]
+    var percent: [Int:Double] = [
+        3 : 0.05,
+        2 : 0.10,
+        1 : 0.20,
+        0 : 0.40
+    ]
+    
+    func percent(event: Event) -> Double {
         guard
-            let startDate = TimeFormatter.shared.date(from: event.bidding_starts_at),
             let closeDate = TimeFormatter.shared.date(from: event.bidding_closes_at)
         else { return 0 }
         let today = Date()
-        if today < startDate { return 0 }
-        let totalDays = Calendar.current.dateComponents([.day], from: startDate, to: closeDate).day ?? 1
-        let daysElapsed = Calendar.current.dateComponents([.day], from: startDate, to: today).day ?? 0
-        let progress = Double(daysElapsed) / Double(totalDays)
-        return progress
+        let daysRemaining = Calendar.current.dateComponents([.day], from: today, to: closeDate).day ?? 0
+        let clamped = max(0, min(daysRemaining, 3)) // limit to 0–3
+        return (percent[clamped] ?? 0) * 100
     }
     
-    func fee(event: Event) -> Int {
+    func fee(event: Event, amount: Int) -> Int {
         guard
-            let startDate = TimeFormatter.shared.date(from: event.bidding_starts_at),
             let closeDate = TimeFormatter.shared.date(from: event.bidding_closes_at)
         else { return 0 }
-
         let today = Date()
-        if today < startDate { return 0 }
-        let totalDays = Calendar.current.dateComponents([.day], from: startDate, to: closeDate).day ?? 1
-        let daysElapsed = Calendar.current.dateComponents([.day], from: startDate, to: today).day ?? 0
-        let progress = max(0, min(daysElapsed, totalDays))
-        
-        return progress * 5
+        let daysRemaining = Calendar.current.dateComponents([.day], from: today, to: closeDate).day ?? 0
+        let clamped = max(0, min(daysRemaining, 3))
+        return Int(Double(amount) * (percent[clamped] ?? 0))
     }
 }

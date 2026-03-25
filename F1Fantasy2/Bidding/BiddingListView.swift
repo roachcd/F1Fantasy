@@ -13,6 +13,7 @@ struct BiddingListView: View {
     @ObservedObject var userData: UserData
     @State private var refreshTask: Task<Void, Never>?
     @State var didNotUpdate: Bool = true
+    @State var showFeeInfo: Bool = false
     
     var sortedDrivers: [Driver] {
         if let event = league.selectedEvent{
@@ -68,11 +69,6 @@ struct BiddingListView: View {
                 List{
                     if #unavailable(iOS 26) {
                         HomeView.AccessoryView(selectedLeague: league)
-                    }
-                    Label {
-                        Text("Bidding Fee: $\(Fee.shared.fee(event: event))")
-                    } icon: {
-                        Image(systemName: "dollarsign.gauge.chart.leftthird.topthird.rightthird", variableValue: Fee.shared.percent(event: event))
                     }
                     Section(header: liveHeader) {
                         ForEach(withBids, id: \.id) { driver in
