@@ -20,6 +20,7 @@ struct DriverBiddingView: View {
     @State private var refreshTask: Task<Void, Never>?
     @State private var didNotUpdate: Bool = true
     @State private var showFeeInfo = false
+    @State private var showTotalBidInfo = false
     
     func getBids() async -> Bool{
         do{
@@ -205,7 +206,19 @@ struct DriverBiddingView: View {
                 }.sheet(isPresented: $showFeeInfo){
                     FeeInfo()
                 }
-                Text("Total: $\(Fee.shared.fee(event: event, amount: driver.total_bids+selectedBid) + selectedBid)")
+                HStack{
+                    //Image(systemName: "dollarsign.gauge.chart.leftthird.topthird.rightthird", variableValue: Fee.shared.percent(event: event)).foregroundStyle(.blue)
+                    Text("Incurred Charges: $\(driver.total_bids)")
+                    Spacer()
+                    Button{
+                        showTotalBidInfo = true
+                    } label: {
+                        Image(systemName: "info.circle").foregroundStyle(.secondary)
+                    }
+                }.sheet(isPresented: $showTotalBidInfo){
+                    IncuredChargeInfo()
+                }
+                Text("Total: $\(Fee.shared.fee(event: event, amount: driver.total_bids+selectedBid) + selectedBid + driver.total_bids)")
             }
             .frame(height: .infinity)
             .scrollDisabled(true)
