@@ -143,7 +143,7 @@ struct DriverBiddingView: View {
                         }
                     }
                     .pickerStyle(.wheel)
-                    .frame(width: .infinity, height: 120)
+                    .frame(width: .infinity, height: 140)
                     .clipped()
                     Spacer()
                     Button{
@@ -169,7 +169,7 @@ struct DriverBiddingView: View {
                         bidConfirmation
                     }
                 }
-            }.padding()
+            }.padding().padding(.bottom, 10)
                 .alert("Bidding Closed", isPresented: $showClosedMessage) {
                     Button("Ok", role: .cancel) { }
                 } message: {
