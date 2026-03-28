@@ -1,19 +1,17 @@
-//
-//  LoginView.swift
-//  F1Fantasy2
-//
-//  Created by Chase Roach on 3/14/26.
-//
-
 import SwiftUI
 
+/// The login screen view for authenticating a user.
+///
+/// - Parameters:
+///   - userData: An observed object managing user authentication state.
+///
 struct LoginView: View{
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var incorrect: Bool = false
     @ObservedObject var userData: UserData
     @State var loading: Bool = false
-    
+
     var body: some View {
         VStack (spacing: 100){
             Spacer()

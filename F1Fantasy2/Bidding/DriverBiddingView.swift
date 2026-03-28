@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+/// A view that displays bidding information and allows placing bids on a specific driver.
+///
+/// - Displays a list of past bids (bidding history) for the driver.
+/// - Shows a live update indicator when the event is open and live.
+/// - Provides a picker to select a bid amount if bidding is open and conditions allow.
+/// - Handles the bid confirmation flow including bid placement and fee information.
+///
+/// - Parameters:
+///   - event: The event containing bidding details.
+///   - userData: User-related data including league and user info.
+///   - driver: The driver for whom bids are displayed and placed.
 struct DriverBiddingView: View {
     @ObservedObject var event: Event
     @ObservedObject var userData: UserData
@@ -22,6 +33,10 @@ struct DriverBiddingView: View {
     @State private var showFeeInfo = false
     @State private var showTotalBidInfo = false
     
+    /// Fetches all bids for the current driver within the selected league asynchronously
+    /// and updates the local `bids` state and loading indicator.
+    ///
+    /// - Returns: A Boolean indicating whether the fetch was successful.
     func getBids() async -> Bool{
         do{
             let network = Network()
@@ -39,6 +54,9 @@ struct DriverBiddingView: View {
         }
     }
     
+    /// Indicates whether bidding is closed based on the event's bidding close timestamp.
+    ///
+    /// Returns `true` if the current date/time is past the bidding close date/time.
     var closed: Bool {
         guard let date = TimeFormatter.shared.date(from: event.bidding_closes_at) else {
             return false
@@ -183,6 +201,9 @@ struct DriverBiddingView: View {
             refreshTask?.cancel()
         }
     }
+    
+    /// The confirmation sheet view shown before placing a bid, displaying bid details,
+    /// bidding fee, incurred charges, total cost, and confirmation/cancellation actions.
     var bidConfirmation: some View{
         VStack(spacing: 16) {
             Spacer()
@@ -265,6 +286,12 @@ struct DriverBiddingView: View {
         }
         .padding()
     }
+    
+    /// Starts an automatic refresh loop that updates the bids and driver data every second
+    /// while the event status is open (status == 2).
+    ///
+    /// The loop runs asynchronously until cancelled (e.g., when the view disappears).
+    /// It updates the `didNotUpdate` flag based on success or failure of the refresh.
     private func startAutoRefresh() {
         refreshTask?.cancel()
 
@@ -273,8 +300,8 @@ struct DriverBiddingView: View {
                 while !Task.isCancelled {
                     do{
                         let success = try await withTimeout(.seconds(1)) {
-                            await getBids()
-                            try await userData.selectedLeague?.selectedEvent?.getDrivers(leagueId: userData.selectedLeague!.id)
+                            _ = await getBids()
+                            _ = try await userData.selectedLeague?.selectedEvent?.getDrivers(leagueId: userData.selectedLeague!.id)
                             return true
                         }
                         if success{

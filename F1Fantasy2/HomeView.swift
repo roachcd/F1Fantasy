@@ -5,8 +5,14 @@
 //  Created by Chase Roach on 3/14/26.
 //
 
+
 import SwiftUI
 
+/// The main home view presenting a tabbed layout with three tabs: League, Bidding, and Extra.
+/// 
+/// - Parameters:
+///     - userData: An observed object containing user-related data including selected league.
+///     - State: Maintains the currently selected tab and the event sheet presentation state.
 struct HomeView: View {
     @ObservedObject var userData: UserData
     @State private var selectedTab = 0
@@ -27,6 +33,8 @@ struct HomeView: View {
         }
     }
 
+    /// A bottom accessory view displayed below the tab bar showing the status of the selected event,
+    /// including lock status, countdown, or finished indicator.
     struct AccessoryView: View {
         @ObservedObject var selectedLeague: League
 
@@ -50,6 +58,9 @@ struct HomeView: View {
         }
     }
     
+    /// Builds the main tab view with tabs for League, Bidding, and Extra sections.
+    /// Handles top toolbar items including the league menu and event button,
+    /// and manages the presentation of the event selection sheet.
     private var tabBar: some View {
         TabView(selection: $selectedTab) {
             LeagueView(userData: userData)
@@ -132,6 +143,7 @@ struct HomeView: View {
         .applyGlassButtonStyleIfAvailable() //Apply .bottonStyle(.glass) on 26
     }
 
+    /// A button displayed in the toolbar allowing the user to open the event selection sheet.
     struct EventToolbarButton: View {
         @ObservedObject var league: League
         @Binding var eventSheet: Bool
@@ -146,6 +158,7 @@ struct HomeView: View {
     }
     
 
+    /// A menu list presented as a sheet allowing the user to select an event from the league's events.
     struct EventIndicatorMenu: View {
         @Environment(\.dismiss) var dismiss
         @ObservedObject var league: League
@@ -191,6 +204,9 @@ struct HomeView: View {
                 }
             }
         }
+        /// Returns a user-friendly status text for a given event status code.
+        /// - Parameter status: The event status code.
+        /// - Returns: A string describing the status (e.g., "Unlocked", "Locked", "Finished", or "Unknown").
         func statusText(for status: Int) -> String {
             switch status {
             case 2: return "Unlocked"
@@ -200,6 +216,9 @@ struct HomeView: View {
             }
         }
 
+        /// Returns the system image name corresponding to a given event status code.
+        /// - Parameter status: The event status code.
+        /// - Returns: A string representing the SF Symbol name for the status icon.
         func statusIcon(for status: Int) -> String {
             switch status {
             case 2: return "lock.open.fill"

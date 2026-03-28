@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+/// A view that is presented while the app is launching or reloading essential data
+
 struct LaunchingView: View{
     @State private var showContent = false
     

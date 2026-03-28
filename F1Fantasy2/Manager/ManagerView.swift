@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+/// A view that displays detailed information about a manager.
+///
+/// - Parameters:
+///   - manager: The manager whose details are to be displayed.
+///   - userData: An observed object containing user-related data, including selected league and event.
+///
 struct ManagerView: View{
     var manager: Manager
     @ObservedObject var userData: UserData

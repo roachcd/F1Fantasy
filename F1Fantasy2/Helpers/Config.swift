@@ -7,8 +7,12 @@
 
 import Foundation
 
+/// A helper class to define API hosts depending on if the app is in development or production mode
+
 struct Config {
-    static let mode = 0 // 0 = development, 1 = production
+    
+    /// Change mode for development or production
+    static let mode = 1 // 0 = development, 1 = production
     
     static let endpoints: [Int: String] = [
         0: "http://localhost:3000",

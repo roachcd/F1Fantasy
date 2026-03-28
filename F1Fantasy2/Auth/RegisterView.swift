@@ -1,12 +1,11 @@
-//
-//  RegisterView.swift
-//  F1Fantasy2
-//
-//  Created by Chase Roach on 3/14/26.
-//
+///
+///  RegisterView.swift
+///  F1Fantasy2
+///
 
 import SwiftUI
 
+/// A view that provides a user interface for registering a new account.
 struct RegisterView: View{
     @State private var email: String = ""
     @State private var password: String = ""
@@ -14,11 +13,18 @@ struct RegisterView: View{
     @Environment(\.dismiss) var dismiss
     private let network = Network()
     
+    /// Validates the provided email string using a regular expression.
+    ///
+    /// The regex pattern checks for a standard email format.
+    ///
+    /// - Parameter email: The email address to validate.
+    /// - Returns: `true` if the email matches the regex pattern; otherwise, `false`.
     func isValidEmail(_ email: String) -> Bool {
         let emailRegex = #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
         return NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: email)
     }
     
+    /// The main view body presenting the registration UI.
     var body: some View {
         VStack (spacing: 100){
             Spacer()
@@ -78,3 +84,4 @@ struct RegisterView: View{
 #Preview {
     RegisterView()
 }
+

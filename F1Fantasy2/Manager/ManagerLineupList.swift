@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+/// A view that displays the lineup of drivers for a given manager in a league event.
+///
+/// - Parameters:
+///   - `manager`: The manager whose lineup is being displayed.
+///   - `league`: The league context for the event.
+///   - `event`: The event for which the lineup is shown.
+///   - `userData`: The observed user data object.
 struct ManagerLineupList: View{
     var manager: Manager
     var league: League

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// A view presenting information about bidding fees.
 struct FeeInfo: View{
     var body: some View{
         VStack(spacing: 20){

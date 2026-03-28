@@ -7,13 +7,22 @@
 
 import SwiftUI
 
-//TODO: Joining league does not dismiss
+/// Represents a lightweight league result returned from a join league lookup.
+///
+/// - Parameters:
+///   - id: The unique identifier of the league.
+///   - name: The name of the league.
+///   - code: The 4-digit code used to join the league.
 struct JoinLeague: Codable, Identifiable, Hashable {
     var id: Int
     var name: String
     var code: Int
 }
 
+/// A view that allows users to join a league by entering a 4-digit code.
+///
+/// - Parameters:
+///   - userData: The observable user data object managing user state.
 struct JoinLeagueView: View{
     @State private var code: String = ""
     @State private var incorrect: Bool = false
@@ -22,6 +31,8 @@ struct JoinLeagueView: View{
     @State var showName: Bool = false
     @State var league: JoinLeague?
     
+    /// The main view body presenting the league code entry UI, error messages,
+    /// and navigation to the username creation view upon successful league lookup.
     var body: some View {
         NavigationStack{
             VStack (spacing: 100){
@@ -87,6 +98,14 @@ struct JoinLeagueView: View{
             }
         }
     }
+    
+    /// Performs a network request to find a league matching the entered code.
+    ///
+    /// - Parameter showError: Determines if errors should be displayed to the user.
+    /// When true, sets the `incorrect` flag on failure; otherwise suppresses error display.
+    ///
+    /// Updates the `league` property with the found league on success,
+    /// and resets the `loading` and `incorrect` flags accordingly.
     func findLeague(showError: Bool = true){
         loading = true
         Task{
@@ -115,6 +134,12 @@ struct JoinLeagueView: View{
         }
     }
 }
+
+/// A view for collecting a unique username to join a found league.
+///
+/// - Parameters:
+///   - league: The league to join.
+///   - userData: The observable user data object managing user state.
 
 struct createNameView: View{
     @State var name = ""
@@ -179,3 +204,4 @@ struct createNameView: View{
 #Preview {
     JoinLeagueView(userData: UserData())
 }
+

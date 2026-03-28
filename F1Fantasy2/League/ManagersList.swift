@@ -1,19 +1,29 @@
-//
-//  ManagersList.swift
-//  F1Fantasy2
-//
-//  Created by Chase Roach on 3/16/26.
-//
-
 import SwiftUI
 
+/// A view that displays a ranked list of managers within the selected league
+///
+/// - Parameters:
+///   - userData: An observed object providing the selected league and related data.
 struct ManagersList: View{
     @ObservedObject var userData: UserData
     
+    /// Returns the list of managers sorted by points in descending order for the selected league.
+    ///
+    /// If no league is selected, returns an empty array.
     var sortedManagers: [Manager] {
         userData.selectedLeague?.managers.sorted { $0.points > $1.points } ?? []
     }
     
+    /// Returns a color corresponding to the manager's rank index.
+    ///
+    /// Color mapping:
+    /// - 0: gold (yellow)
+    /// - 1: silver (gray)
+    /// - 2: bronze (brown)
+    /// - default: system grouped background color
+    ///
+    /// - Parameter index: The rank index of the manager.
+    /// - Returns: A `Color` representing the medal or default background.
     func colorForIndex(_ index: Int) -> Color {
         switch index {
         case 0: return .yellow        // gold
@@ -54,3 +64,4 @@ struct ManagersList: View{
         }
     }
 }
+

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// A view presenting information about Incured Charges.
 struct IncuredChargeInfo: View{
     var body: some View{
         VStack(spacing: 20){

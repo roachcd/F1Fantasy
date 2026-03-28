@@ -6,7 +6,11 @@
 //
 
 import SwiftUI
-
+/// A view that displays information about the logged in user.
+///
+/// - Parameters:
+///   - userData: An observed object containing user-related data, including selected league and event.
+///
 struct AccountView: View {
     @ObservedObject var userData: UserData
     @Environment(\.dismiss) var dismiss

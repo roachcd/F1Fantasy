@@ -1,12 +1,13 @@
-//
-//  BiddingListView.swift
-//  F1Fantasy2
-//
-//  Created by Chase Roach on 3/14/26.
-//
-
 import SwiftUI
 
+/// The main view displaying a list of drivers associated with a selected league event, categorized by those with bids and without bids.
+///
+///   This view reads the selected league and event from the provided user data and lists drivers who have placed bids separately from those who have not. It displays a live indicator when the event is live, and automatically refreshes driver and user data periodically during live bidding.
+///
+/// - Parameters:
+///   - league: The current league object observed for changes.
+///   - event: The current event object observed for changes.
+///   - userData: The user data object containing selections and user-specific information.
 struct BiddingListView: View {
     @ObservedObject var league: League
     @ObservedObject var event: Event
@@ -15,6 +16,7 @@ struct BiddingListView: View {
     @State var didNotUpdate: Bool = true
     @State var showFeeInfo: Bool = false
     
+    /// Returns all drivers sorted by total bids in descending order within the selected event.
     var sortedDrivers: [Driver] {
         if let event = league.selectedEvent{
             let sorted = event.drivers.sorted { (lhs: Driver, rhs: Driver) in
@@ -25,12 +27,14 @@ struct BiddingListView: View {
         return []
     }
     
+    /// Returns drivers who have placed no bids (total_bids equals zero).
     var noBids: [Driver] {
         return sortedDrivers.filter { (driver: Driver) in
             driver.total_bids == 0
         }
     }
     
+    /// Returns drivers who have placed one or more bids (total_bids greater than zero).
     var withBids: [Driver] {
         return sortedDrivers.filter { (driver: Driver) in
             driver.total_bids > 0
@@ -109,6 +113,9 @@ struct BiddingListView: View {
             }
         }
     }
+    
+    /// Starts the auto-refresh loop which repeatedly attempts to update driver and user data every 5 seconds when the event is live.
+    /// If the update is successful within a 3-second timeout, the live indicator shows as updated, otherwise it shows a loading state.
     private func startAutoRefresh() {
         refreshTask?.cancel()
 
@@ -141,7 +148,6 @@ struct BiddingListView: View {
         }
     }
 }
-
 
 struct DriverLabel: View{
     var driver: Driver
