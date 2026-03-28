@@ -14,6 +14,8 @@ const fs = require("fs");
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const SECRET_KEY = 'your_secret_key';
 app.use(express.urlencoded({ extended: true }));
 
 /**
