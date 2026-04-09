@@ -68,15 +68,18 @@ struct HomeView: View {
                 .tag(0)
             
             if let event = userData.selectedLeague?.selectedEvent{
-                BiddingListView(league: userData.selectedLeague!, event: event, userData: userData)
-                    .tabItem { Label("Bidding", systemImage: "flag.pattern.checkered") }
+                DriverSelectionView(userData: userData, event: event, league: userData.selectedLeague!)
+                    .tabItem {
+                        Label(event.is_sprint == 1 ? "Bidding" : "Lineup",
+                              systemImage: "flag.pattern.checkered")
+                    }
                     .tag(1)
                     .id(event.id)
             }
 
             ExtraGameView()
                 .tabItem { Label("Extra", systemImage: "list.bullet") }
-                .tag(2)
+                .tag(3)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -152,7 +155,14 @@ struct HomeView: View {
             Button {
                 eventSheet = true
             } label: {
-                Text(league.selectedEvent?.name ?? "Select Event")
+                HStack(spacing: 4){
+                    Text(league.selectedEvent?.name ?? "Select Event")
+                        if league.selectedEvent?.is_sprint == 1 {
+                            Text("Sprint")
+                        } else {
+                            Text("Grand Prix")
+                        }
+                }
             }
         }
     }
@@ -182,11 +192,35 @@ struct HomeView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(event.name)
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
-                                    .multilineTextAlignment(.leading)
-
+                                HStack{
+                                    Text(event.name)
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                        .multilineTextAlignment(.leading)
+                                    
+                                    Group{
+                                        if event.is_sprint == 1 {
+                                            Text("Sprint")
+                                                .font(.caption2)
+                                                .fontWeight(.bold)
+                                                .foregroundStyle(.black)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.gray.opacity(0.25))
+                                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        } else {
+                                            Text("Grand Prix")
+                                                .font(.caption2)
+                                                .fontWeight(.bold)
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.red)
+                                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        }
+                                    }
+                                }
+                                
                                 HStack(spacing: 6) {
                                     Image(systemName: statusIcon(for: event.status))
                                     Text(statusText(for: event.status))

@@ -45,6 +45,9 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     /// The country associated with the event, typically an asset name or code used for flag imagery.
     var country: String
     
+    /// Flags if the event is a sprint event
+    var is_sprint: Int
+    
     enum CodingKeys: String, CodingKey {
         case id
         case name
@@ -53,6 +56,7 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
         case bidding_starts_at
         case status
         case country
+        case is_sprint
     }
     
     /// The list of drivers for this event, populated after loading.

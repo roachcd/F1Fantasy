@@ -12,7 +12,7 @@ import Foundation
 struct Config {
     
     /// Change mode for development or production
-    static let mode = 1 // 0 = development, 1 = production
+    static let mode = 0 // 0 = development, 1 = production
     
     static let endpoints: [Int: String] = [
         0: "http://localhost:3000",
