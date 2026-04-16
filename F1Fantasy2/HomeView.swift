@@ -93,12 +93,12 @@ struct HomeView: View {
         }
         .sheet(isPresented: $eventSheet){
             if let league = userData.selectedLeague{
-                EventIndicatorMenu(league: league)
+                EventIndicatorMenu(league: league, userData: userData)
             }
         }
         .onChange(of: selectedTab){
             Task{
-                _ = await userData.selectedLeague!.selectedEvent!.load(leagueId: userData.selectedLeague!.id)
+                _ = await userData.selectedLeague!.selectedEvent!.load(leagueId: userData.selectedLeague!.id, token: userData.token)
             }
         }
     }
@@ -172,6 +172,7 @@ struct HomeView: View {
     struct EventIndicatorMenu: View {
         @Environment(\.dismiss) var dismiss
         @ObservedObject var league: League
+        @ObservedObject var userData: UserData
 
         var body: some View {
             List {
@@ -180,7 +181,7 @@ struct HomeView: View {
                         league.selectedEvent = event
                         dismiss()
                         Task{
-                            await event.load(leagueId: league.id)
+                            await event.load(leagueId: league.id, token: userData.token)
                             league.selectedEvent = event
                         }
                     } label: {

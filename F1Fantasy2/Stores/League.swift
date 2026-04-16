@@ -58,7 +58,7 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
         do{
             success = try await self.getThisUser(token: token)
             success = try await self.getManagers()
-            success = try await self.getEvents()
+            success = try await self.getEvents(token: token)
         }
         catch{
             print(error)
@@ -108,7 +108,7 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
     ///
     /// - Throws: Propagates decoding or network errors.
     /// - Returns: A Boolean indicating whether the events and next upcoming event details were successfully loaded.
-    func getEvents() async throws -> Bool{
+    func getEvents(token: String) async throws -> Bool{
         let network = Network()
         let response = await network.get(endpoint: "events", queryItems: [URLQueryItem(name: "seasonId", value: "\(season_id)")])
         if response.success{
@@ -127,7 +127,7 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
                 .event
             
             print(self.selectedEvent ?? "No Event")
-            if await self.selectedEvent!.load(leagueId: id){
+            if await self.selectedEvent!.load(leagueId: id, token: token){
                 return true
             }
             return false

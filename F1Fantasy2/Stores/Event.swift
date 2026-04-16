@@ -48,6 +48,8 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     /// Flags if the event is a sprint event
     var is_sprint: Int
     
+    var spent: Int = 0
+    
     enum CodingKeys: String, CodingKey {
         case id
         case name
@@ -62,7 +64,11 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     /// The list of drivers for this event, populated after loading.
     @Published var drivers: [Driver] = []
     
-    @StateObject var userData = UserData()
+    /// The list of driver the user has on their lineup
+    @Published var user_lineup: [Driver] = []
+    
+    @Published var budget: Int = 0;
+        
     
     /// Loads the drivers for this event asynchronously given a league ID.
     ///
@@ -73,10 +79,11 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     ///
     /// - Parameter leagueId: The league identifier to filter drivers by.
     /// - Returns: `true` if drivers were successfully loaded, otherwise `false`.
-    func load(leagueId: Int) async -> Bool {
+    func load(leagueId: Int, token: String) async -> Bool {
         var success = true
         do {
             success = try await getDrivers(leagueId: leagueId)
+            success = try await getUserDrivers(token: token, leagueId: leagueId)
             var closed: Bool {
                 guard let date = TimeFormatter.shared.date(from: bidding_closes_at) else {
                     return false
@@ -88,6 +95,8 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
         catch{
             print(error)
         }
+        updateBudget()
+        print(user_lineup)
         return success
     }
     
@@ -108,6 +117,52 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
         return false
     }
     
+    func getUserDrivers(token: String, leagueId: Int) async throws -> Bool {
+        let network = Network()
+        let response = await network.get(endpoint: "eventLineup", queryItems: [URLQueryItem(name: "eventId", value: "\(id)"), URLQueryItem(name: "leagueId", value: "\(leagueId)")], token: token)
+        if response.success {
+            user_lineup = try JSONDecoder().decode([Driver].self, from: response.data!)
+            return true
+        }
+        return false
+    }
+    
+    func updateBudget(){
+        print("Update Budget")
+        spent = 0;
+        for driver in user_lineup {
+            spent = spent + driver.cost
+        }
+        budget = 100 - spent;
+    }
+    
+    func removeDriver(driver: Driver, leagueId: Int, token: String) async throws -> Bool{
+        user_lineup.removeAll(where: { $0.id == driver.id })
+        updateBudget()
+        
+        let network = Network()
+        let response = await network.post(endpoint: "removeDriver", body: ["token": token, "driver_id": driver.driver_id, "league_id": leagueId, "event_id": id, "event_driver_id" : driver.event_driver_id])
+        if response.success{
+            return true
+        }
+        else{
+            return false
+        }
+    }
+    
+    func addDriver(driver: Driver, leagueId: Int, token: String) async throws -> Bool{
+        user_lineup.append(driver)
+        updateBudget()
+        
+        let network = Network()
+        let response = await network.post(endpoint: "addDriver", body: ["token": token, "driver_id": driver.driver_id, "league_id": leagueId, "event_id": id, "event_driver_id" : driver.event_driver_id])
+        if response.success{
+            return true
+        }
+        else{
+            return false
+        }
+    }
     // MARK: - Equatable Conformance
     
     /// Equatable conformance comparing events by their `id` and `name`.

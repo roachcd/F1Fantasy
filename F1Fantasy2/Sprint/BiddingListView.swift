@@ -95,7 +95,7 @@ struct BiddingListView: View {
                 }
                 .onAppear {
                     Task {
-                        await event.load(leagueId: league.id)
+                        await event.load(leagueId: league.id, token: userData.token)
                     }
                 }
                 .onAppear {
@@ -164,10 +164,8 @@ struct DriverLabel: View{
                 )
             Text("\(driver.name)")
             Spacer()
-            if(driver.total_bids != -1){
-                GroupBox{
-                    Text("$\(driver.total_bids)")
-                }
+            GroupBox{
+                Text("$\(driver.cost)")
             }
         }
     }

@@ -43,6 +43,8 @@ final class Driver: Identifiable, Hashable, Codable {
     /// The total number of bids placed on this driver.
     var total_bids: Int
     
+    var cost: Int
+    
     enum CodingKeys: String, CodingKey {
         case id
         case driver_id
@@ -53,6 +55,7 @@ final class Driver: Identifiable, Hashable, Codable {
         case position
         case total_bids
         case points
+        case cost
     }
     
     /// The list of bids placed on this driver.
@@ -79,10 +82,6 @@ final class Driver: Identifiable, Hashable, Codable {
             return false
         }
         catch {
-            #if DEBUG
-            let logger = Logger(subsystem: "com.yourcompany.F1Fantasy2", category: "Driver")
-            logger.error("Failed to fetch bids: \(error.localizedDescription)")
-            #endif
             return false
         }
     }

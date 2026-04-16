@@ -23,12 +23,13 @@ struct DriverSelectionView: View {
     
     var body: some View {
         VStack {
-            if event.is_sprint == 1{
+            if userData.selectedLeague?.selectedEvent?.is_sprint == 1{
                 BiddingListView(league: league, event: event, userData: userData)
             }
             else{
-                MyLineupView()
+                MyLineupView(userData: userData, league: league, event: event)
             }
         }
     }
 }
+

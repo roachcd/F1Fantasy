@@ -256,6 +256,7 @@ app.get("/eventDrivers", (req, res) => {
         d.team,
         ed.position,
         ed.points,
+        ed.cost,
         COALESCE(SUM(b.amount), 0) AS total_bids
     FROM drivers d
     JOIN event_drivers ed 
@@ -376,7 +377,7 @@ app.get('/eventLineup', (req, res) => {
 
     console.log(userId, leagueId, eventId);
 
-    const sql = "SELECT d.id AS driver_id, ed.id AS event_driver_id, d.name, d.car_number, d.team, ed.position, ed.points, -1 AS total_bids FROM user_drivers ud JOIN event_drivers ed ON ed.id = ud.event_driver_id JOIN drivers d ON d.id = ed.driver_id WHERE ud.league_id = ? AND ud.user_id = ? AND ud.event_id = ?;";
+    const sql = "SELECT d.id AS driver_id, ed.id AS event_driver_id, ed.cost, d.name, d.car_number, d.team, ed.position, ed.points, -1 AS total_bids FROM user_drivers ud JOIN event_drivers ed ON ed.id = ud.event_driver_id JOIN drivers d ON d.id = ed.driver_id WHERE ud.league_id = ? AND ud.user_id = ? AND ud.event_id = ?;";
     pool.query(sql, [leagueId, userId, eventId], (err, result) => {
         if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
         res.json(result);
@@ -485,6 +486,27 @@ app.get('/allLeagues', (req, res) => {
         res.json(result);
     });
 });
+
+app.post('/removeDriver', (req, res) =>{
+  const { token, driver_id, league_id, event_id, event_driver_id } = req.body
+  const userID = getUserID(token)
+  const sql = 'DELETE FROM user_drivers WHERE user_id = ? AND driver_id = ? AND league_id = ? AND event_id = ? AND event_driver_id = ?;';
+  pool.query(sql, [userID, driver_id, league_id, event_id, event_driver_id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Success!' });
+  });
+})
+
+app.post('/addDriver', (req, res) => {
+  console.log("Add driver")
+  const { token, driver_id, league_id, event_id, event_driver_id } = req.body
+  const userID = getUserID(token)
+  const sql = 'INSERT INTO user_drivers (user_id, driver_id, league_id, event_id, event_driver_id) VALUES (?, ?, ?, ?, ?);';
+  pool.query(sql, [userID, driver_id, league_id, event_id,  event_driver_id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Success!' });
+  });
+})
 
 // -----------------------------------------------------------------------------
 // Server Setup

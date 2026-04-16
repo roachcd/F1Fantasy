@@ -24,54 +24,33 @@ struct ManagerLineupList: View{
     @ObservedObject var userData: UserData
     
     var body: some View{
-        if loading{
-            ProgressView()
-                .task{
-                    do{
-                        var closed: Bool {
-                            guard let date = TimeFormatter.shared.date(from: event.bidding_closes_at) else {
-                                return false
-                            }
-                            return date <= Date()
-                        }
-                        if closed, event.status == 1 || event.status == 3 {
+        Section{
+            if loading{
+                ProgressView()
+                    .task{
+                        do{
                             let network = Network()
                             let response = await network.get(endpoint: "eventLineup", queryItems: [URLQueryItem(name: "leagueId", value: "\(league.id)"), URLQueryItem(name: "eventId", value: "\(event.id)"), URLQueryItem(name: "userId", value: "\(manager.id)")])
                             if response.success{
                                 drivers = try JSONDecoder().decode([Driver].self, from: response.data!)
                                 self.loading = false
-                                self.confirmed = true
                             }
                         }
-                        else{
-                            let network = Network()
-                            let response = await network.get(endpoint: "unofficialEventLineup", queryItems: [URLQueryItem(name: "leagueId", value: "\(league.id)"), URLQueryItem(name: "eventId", value: "\(event.id)"), URLQueryItem(name: "userId", value: "\(manager.id)")])
-                            if response.success{
-                                drivers = try JSONDecoder().decode([Driver].self, from: response.data!)
-                                self.loading = false
-                                self.confirmed = false
-                            }
+                        catch{
+                            print(error)
                         }
                     }
-                    catch{
-                        print(error)
-                    }
-                }
-        }
-        else{
-            Section{
-                if confirmed{
-                    Label("Lineups are confirmed", systemImage: "checkmark").foregroundStyle(Color(.green))
-                }
-                else{
-                    Label("Lineups are not confirmed", systemImage: "exclamationmark.triangle").foregroundStyle(Color(.yellow))
-                }
+            }
+            else{
                 ForEach(drivers, id: \.id) { driver in
                     NavigationLink{
-                        DriverBiddingView(event: event, userData: userData, driver: driver)
+                        DriverView(driver: driver, event: event, userData: userData)
                     } label: {
                         DriverLabel(driver: driver)
                     }
+                }
+                if drivers.isEmpty{
+                    Text("No drivers in lineup")
                 }
             }
         }
