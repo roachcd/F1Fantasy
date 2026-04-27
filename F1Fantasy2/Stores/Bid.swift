@@ -15,15 +15,24 @@ import Foundation
 ///   the application.
 
 class Bid: Codable, Identifiable {
-    /// Unique identifier of the bid.
     var id: Int
-    
-    /// Name of the manager who placed the bid.
     var manager_name: String
-    
-    /// The amount of the bid.
     var amount: Int
-    
-    /// The timestamp of when the bid was created, formatted as an ISO 8601 string provided by the backend.
     var created_at: String
+
+    init(id: Int, manager_name: String, amount: Int, created_at: String) {
+        self.id = id
+        self.manager_name = manager_name
+        self.amount = amount
+        self.created_at = created_at
+    }
+
+    convenience init(amount: Int) {
+        self.init(
+            id: -1,
+            manager_name: "",
+            amount: amount,
+            created_at: ""
+        )
+    }
 }

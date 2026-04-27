@@ -82,8 +82,9 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     func load(leagueId: Int, token: String) async -> Bool {
         var success = true
         do {
-            success = try await getDrivers(leagueId: leagueId)
+            success = try await getDrivers(leagueId: leagueId, token: token)
             success = try await getUserDrivers(token: token, leagueId: leagueId)
+            //success = try await getDriverBids(token: token, leagueId: leagueId)
             var closed: Bool {
                 guard let date = TimeFormatter.shared.date(from: bidding_closes_at) else {
                     return false
@@ -107,14 +108,50 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     /// - Parameter leagueId: The league identifier to filter drivers by.
     /// - Throws: Errors encountered during network request or decoding.
     /// - Returns: `true` if drivers were successfully fetched and decoded, otherwise `false`.
-    func getDrivers(leagueId: Int) async throws -> Bool {
+    func getDrivers(leagueId: Int, token: String) async throws -> Bool {
         let network = Network()
-        let response = await network.get(endpoint: "eventDrivers", queryItems: [URLQueryItem(name: "eventId", value: "\(id)"), URLQueryItem(name: "leagueId", value: "\(leagueId)")])
-        if response.success {
-            drivers = try JSONDecoder().decode([Driver].self, from: response.data!)
-            return true
+
+        let response = await network.get(
+            endpoint: "eventDrivers",
+            queryItems: [
+                URLQueryItem(name: "eventId", value: "\(id)"),
+                URLQueryItem(name: "leagueId", value: "\(leagueId)"),
+                URLQueryItem(name: "token", value: token)
+            ]
+        )
+
+        guard response.success, let data = response.data else {
+            return false
         }
-        return false
+
+        let loadedDrivers = try JSONDecoder().decode([Driver].self, from: data)
+
+        await MainActor.run {
+            self.drivers = loadedDrivers
+        }
+
+        return true
+    }
+    
+    func getDriverBids(token: String, leagueId: Int) async throws -> Bool {
+        var updatedDrivers = drivers
+        var allSuccess = true
+        await withTaskGroup(of: (Int, Bool).self) { group in
+            for (index, driver) in updatedDrivers.enumerated() {
+                group.addTask {
+                    let success = try? await driver.getDriverBid(token: token, leagueId: leagueId)
+                    return (index, success == true)
+                }
+            }
+            for await (index, success) in group {
+                if !success { allSuccess = false }
+                // The driver's bid property is already updated inside getDriverBid
+                // No need to do more unless you want to deep-copy, but current approach is fine
+            }
+        }
+        // Assign all at once so the UI does not see interim updates
+        drivers = updatedDrivers
+        return allSuccess
     }
     
     func getUserDrivers(token: String, leagueId: Int) async throws -> Bool {
@@ -130,8 +167,15 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     func updateBudget(){
         print("Update Budget")
         spent = 0;
-        for driver in user_lineup {
-            spent = spent + driver.cost
+        if is_sprint == 0{
+            for driver in user_lineup {
+                spent = spent + driver.cost
+            }
+        }
+        else{
+            for driver in drivers{
+                spent = spent + (driver.bid?.amount ?? 0)
+            }
         }
         budget = 100 - spent;
     }
@@ -177,4 +221,3 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
         hasher.combine(id)
     }
 }
-

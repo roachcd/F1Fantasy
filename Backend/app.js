@@ -241,42 +241,60 @@ app.get('/events', (req, res) => {
  * @returns {Array<Object>} Driver and bidding summary data.
  */
 app.get("/eventDrivers", (req, res) => {
-    console.log("Event Drivers");
-
     const eventId = req.query.eventId;
-    const league_id = req.query.leagueId;
-    console.log(league_id);
+    const leagueId = req.query.leagueId;
+    const token = req.query.token;
+
+    const userId = getUserID(token);
 
     const sql = `
-    SELECT 
-        d.id as driver_id,
-        d.name,
-        ed.id AS event_driver_id,
-        d.car_number,
-        d.team,
-        ed.position,
-        ed.points,
-        ed.cost,
-        COALESCE(SUM(b.amount), 0) AS total_bids
-    FROM drivers d
-    JOIN event_drivers ed 
-        ON d.id = ed.driver_id
-    LEFT JOIN bids b 
-        ON b.event_driver_id = ed.id
-      AND b.league_id = ?
-    WHERE ed.event_id = ?
-    GROUP BY 
-        d.id,
-        d.name,
-        ed.id,
-        d.car_number,
-        d.team,
-        ed.position,
-        ed.points;`;
+        SELECT 
+            ed.id AS event_driver_id,
+            d.id AS driver_id,
+            d.name,
+            d.car_number,
+            d.team,
+            ed.position,
+            ed.cost,
+            ed.points,
+            b.id AS bid_id,
+            b.amount AS bid_amount,
+            b.created_at AS bid_created_at,
+            "" as manager_name
+        FROM event_drivers ed
+        JOIN drivers d ON d.id = ed.driver_id
+        LEFT JOIN bids b 
+            ON b.event_driver_id = ed.id
+           AND b.league_id = ?
+           AND b.user_id = ?
+        WHERE ed.event_id = ?;
+    `;
 
-    pool.query(sql, [league_id, eventId], (err, result) => {
-        if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
-        res.json(result);
+    pool.query(sql, [leagueId, userId, eventId], (err, result) => {
+        if (err) {
+            return res.status(500).json({
+                message: "DB error: " + err.sqlMessage
+            });
+        }
+
+        const drivers = result.map(row => ({
+            driver_id: row.driver_id,
+            name: row.name,
+            car_number: row.car_number,
+            team: row.team,
+            position: row.position,
+            cost: row.cost,
+            points: row.points,
+            event_driver_id: row.event_driver_id,
+            bid: row.bid_id ? {
+                id: row.bid_id,
+                amount: row.bid_amount,
+                manager_name: row.manager_name,
+                created_at: row.bid_created_at
+            } : null
+        }));
+
+        res.json(drivers);
     });
 });
 
@@ -301,6 +319,22 @@ app.get("/driverBids", (req, res) => {
     });
 });
 
+app.get("/userDriverBid", (req, res) => {
+    console.log("Driver Bids");
+
+    const eventDriverId = req.query.eventDriverId;
+    const leagueId = req.query.leagueId;
+    const token = req.query.token;
+
+    let user_id = getUserID(token)
+
+    const sql = 'SELECT b.id, ul.username AS manager_name, b.amount, b.created_at FROM bids b JOIN event_drivers ed ON b.event_driver_id = ed.id LEFT JOIN user_leagues ul ON ul.user_id = b.user_id AND ul.league_id = b.league_id WHERE b.event_driver_id = ? AND b.league_id = ? AND b.user_id = ?;';
+    pool.query(sql, [eventDriverId, leagueId, user_id], (err, result) => {
+        if (err) return res.status(500).json({ message: "DB error: Error is " + err.sqlMessage });
+        res.json(result);
+    });
+});
+
 /**
  * Places a bid for a driver in a league event.
  *
@@ -314,11 +348,11 @@ app.get("/driverBids", (req, res) => {
  */
 app.post("/placeBid", (req, res) => {
     console.log("Place Bid");
-    const { token, event_driver_id, amount, league_id, fee } = req.body;
+    const { token, event_driver_id, amount, league_id } = req.body;
     const userID = getUserID(token);
 
-    const sql = 'INSERT INTO bids (user_id, event_driver_id, league_id, amount, fee) VALUES (?, ?, ?, ?, ?);';
-    pool.query(sql, [userID, event_driver_id, league_id, amount, fee], (err, result) => {
+    const sql = 'INSERT INTO bids (user_id, event_driver_id, league_id, amount) VALUES (?, ?, ?, ?);';
+    pool.query(sql, [userID, event_driver_id, league_id, amount], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Success!' });
     });

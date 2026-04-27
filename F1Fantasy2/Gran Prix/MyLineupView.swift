@@ -19,6 +19,9 @@ struct MyLineupView: View {
     
     var body: some View {
         List{
+            if #unavailable(iOS 26) {
+                HomeView.AccessoryView(selectedLeague: league, event: event)
+            }
             ForEach(event.user_lineup, id: \.id) { driver in
                 NavigationLink{
                     DriverView(driver: driver, event: event, userData: userData)

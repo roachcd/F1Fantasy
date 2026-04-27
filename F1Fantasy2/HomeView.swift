@@ -24,7 +24,7 @@ struct HomeView: View {
                 .tabBarMinimizeBehavior(.onScrollDown)
                 .tabViewBottomAccessory {
                     if let selectedLeague = userData.selectedLeague{
-                        AccessoryView(selectedLeague: selectedLeague)
+                        AccessoryView(selectedLeague: selectedLeague, event: selectedLeague.selectedEvent!)
                     }
                 }
         }
@@ -37,6 +37,7 @@ struct HomeView: View {
     /// including lock status, countdown, or finished indicator.
     struct AccessoryView: View {
         @ObservedObject var selectedLeague: League
+        @ObservedObject var event: Event
 
         var body: some View {
             HStack {
@@ -47,7 +48,9 @@ struct HomeView: View {
                     Image(systemName: "lock.open.fill")
                     CountdownText(timestamp: selectedLeague.selectedEvent!.bidding_closes_at)
                     Spacer()
-                    Text("$\(selectedLeague.thisUser.money)")
+                    if let event = selectedLeague.selectedEvent {
+                        Text("$\(event.budget)")
+                    }
                 } else if selectedLeague.selectedEvent?.status == 3 {
                     Image(systemName: "flag.pattern.checkered.2.crossed")
                     Text("This event is finished")
@@ -62,43 +65,54 @@ struct HomeView: View {
     /// Handles top toolbar items including the league menu and event button,
     /// and manages the presentation of the event selection sheet.
     private var tabBar: some View {
-        TabView(selection: $selectedTab) {
-            LeagueView(userData: userData)
-                .tabItem { Label("League", systemImage: "chart.bar.fill") }
-                .tag(0)
-            
-            if let event = userData.selectedLeague?.selectedEvent{
-                DriverSelectionView(userData: userData, event: event, league: userData.selectedLeague!)
-                    .tabItem {
-                        Label(event.is_sprint == 1 ? "Bidding" : "Lineup",
-                              systemImage: "flag.pattern.checkered")
+        Group {
+            if let league = userData.selectedLeague {
+                TabView(selection: $selectedTab) {
+                    LeagueView(userData: userData)
+                        .tabItem { Label("League", systemImage: "chart.bar.fill") }
+                        .tag(0)
+                    
+                    if let event = userData.selectedLeague?.selectedEvent{
+                        DriverSelectionView(userData: userData, event: event, league: userData.selectedLeague!)
+                            .tabItem {
+                                Label(event.is_sprint == 1 ? "Bidding" : "Lineup",
+                                      systemImage: "flag.pattern.checkered")
+                            }
+                            .tag(1)
+                            .id(event.id)
+                    } else {
+                        BiddingViewPlaceholder()
+                            .tabItem { Label("Lineup", systemImage: "flag.pattern.checkered") }
+                            .tag(1)
                     }
-                    .tag(1)
-                    .id(event.id)
-            }
-
-            ExtraGameView()
-                .tabItem { Label("Extra", systemImage: "list.bullet") }
-                .tag(3)
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                leagueMenu
-            }
-            ToolbarItem(placement: .topBarLeading) {
-                if let league = userData.selectedLeague{
-                    EventToolbarButton(league: league, eventSheet: $eventSheet)
+                    
+                    ExtraGameView()
+                        .tabItem { Label("Extra", systemImage: "list.bullet") }
+                        .tag(3)
                 }
-            }
-        }
-        .sheet(isPresented: $eventSheet){
-            if let league = userData.selectedLeague{
-                EventIndicatorMenu(league: league, userData: userData)
-            }
-        }
-        .onChange(of: selectedTab){
-            Task{
-                _ = await userData.selectedLeague!.selectedEvent!.load(leagueId: userData.selectedLeague!.id, token: userData.token)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        leagueMenu
+                    }
+                    ToolbarItem(placement: .topBarLeading) {
+                        EventToolbarButton(league: league, eventSheet: $eventSheet)
+                    }
+                }
+                .sheet(isPresented: $eventSheet){
+                    EventIndicatorMenu(league: league, userData: userData)
+                }
+                .onChange(of: selectedTab){
+                    Task{
+                        _ = await userData.selectedLeague!.selectedEvent!.load(leagueId: league.id, token: userData.token)
+                    }
+                }
+            } else {
+                // Fallback when no league is selected
+                ContentUnavailableView(
+                    "No League Selected",
+                    systemImage: "house.fill",
+                    description: Text("Join or select a league from the menu.")
+                )
             }
         }
     }
@@ -270,3 +284,4 @@ private struct BiddingViewPlaceholder: View {
         ContentUnavailableView("No Event Selected", systemImage: "flag.pattern.checkered", description: Text("Choose an event from the League menu."))
     }
 }
+

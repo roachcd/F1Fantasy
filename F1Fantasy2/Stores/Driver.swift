@@ -1,102 +1,98 @@
-//
-//  Driver.swift
-//  F1Fantasy2
-//
-//  Created by Chase Roach on 3/17/26.
-//
-
 import Foundation
-import os
 internal import Combine
 
-/// A model representing a Formula 1 driver within a particular event context.
-///
-/// `Driver` holds identification info (driver_id, event_driver_id), personal details (name, car_number, team),
-/// current position and points in the event, and total bids placed on this driver.
-/// The `bids` property is a published array of `Bid` objects reflecting current bidding state.
-/// This class is annotated with `@MainActor` to ensure UI-safe property updates, making it suitable for use in SwiftUI or other UI layers.
 @MainActor
-final class Driver: Identifiable, Hashable, Codable {
+final class Driver: Identifiable, Hashable, Codable, ObservableObject {
+    
     let id = UUID()
-    
-    /// The unique identifier of the driver.
+
     var driver_id: Int
-    
-    /// The unique identifier of the driver in the context of the current event.
     var event_driver_id: Int
-    
-    /// The full name of the driver.
     var name: String
-    
-    /// The driver's car number.
     var car_number: Int
-    
-    /// The team the driver is currently driving for.
     var team: String
-    
-    /// The driver's current position in the event standings.
     var position: Int
-    
-    /// The total points the driver has accumulated in the event.
     var points: Int
-    
-    /// The total number of bids placed on this driver.
-    var total_bids: Int
-    
     var cost: Int
-    
+
+    @Published var bid: Bid?
+
+    var event_id: Int = -1
+
     enum CodingKeys: String, CodingKey {
-        case id
         case driver_id
         case event_driver_id
         case name
         case car_number
         case team
         case position
-        case total_bids
         case points
         case cost
-    }
-    
-    /// The list of bids placed on this driver.
-    @Published var bids: [Bid] = []
-    
-    /// The event identifier used as the `leagueId` in bid queries.
-    var event_id: Int = -1
-    
-    /// Fetches the bids associated with this driver for the current league/event context.
-    ///
-    /// This method requests bid data from the backend using the `event_driver_id` and `event_id`
-    /// (used as the `leagueId` query parameter).
-    /// On success, updates the `bids` property with the retrieved bid list.
-    ///
-    /// - Returns: `true` if bids were successfully fetched and assigned; otherwise, `false`.
-    func getBids() async -> Bool {
-        do {
-            let network = Network()
-            let response = await network.get(endpoint: "driverBids", queryItems: [URLQueryItem(name: "eventDriverId", value: "\(event_driver_id)"), URLQueryItem(name: "leagueId", value: "\(event_id)")])
-            if response.success {
-                bids = try JSONDecoder().decode([Bid].self, from: response.data!)
-                return true
-            }
-            return false
-        }
-        catch {
-            return false
-        }
-    }
-    
-    /// Equatable conformance based on unique identifier and name.
-    ///
-    /// Two `Driver` instances are considered equal if they share the same unique `id` and `name`.
-    static func == (lhs: Driver, rhs: Driver) -> Bool {
-        return lhs.id == rhs.id && lhs.name == rhs.name
+        case bid
     }
 
-    /// Hashable conformance hashing the unique identifier.
-    ///
-    /// The hash value is derived from the driver's unique `id`.
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        driver_id = try container.decode(Int.self, forKey: .driver_id)
+        event_driver_id = try container.decode(Int.self, forKey: .event_driver_id)
+        name = try container.decode(String.self, forKey: .name)
+        car_number = try container.decode(Int.self, forKey: .car_number)
+        team = try container.decode(String.self, forKey: .team)
+        position = try container.decode(Int.self, forKey: .position)
+        points = try container.decode(Int.self, forKey: .points)
+        cost = try container.decode(Int.self, forKey: .cost)
+
+        bid = try container.decodeIfPresent(Bid.self, forKey: .bid)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(driver_id, forKey: .driver_id)
+        try container.encode(event_driver_id, forKey: .event_driver_id)
+        try container.encode(name, forKey: .name)
+        try container.encode(car_number, forKey: .car_number)
+        try container.encode(team, forKey: .team)
+        try container.encode(position, forKey: .position)
+        try container.encode(points, forKey: .points)
+        try container.encode(cost, forKey: .cost)
+        try container.encodeIfPresent(bid, forKey: .bid)
+    }
+
+    func getDriverBid(token: String, leagueId: Int) async throws -> Bool {
+        do {
+            let network = Network()
+            let response = await network.get(
+                endpoint: "userDriverBid",
+                queryItems: [
+                    URLQueryItem(name: "eventDriverId", value: "\(event_driver_id)"),
+                    URLQueryItem(name: "leagueId", value: "\(leagueId)"),
+                    URLQueryItem(name: "token", value: token)
+                ]
+            )
+
+            if response.success, let data = response.data {
+                let bids = try JSONDecoder().decode([Bid].self, from: data)
+                bid = bids.first
+                print(bid?.amount as Any)
+                return true
+            }
+
+            return false
+        } catch {
+            print(error)
+            return false
+        }
+    }
+
+    static func == (lhs: Driver, rhs: Driver) -> Bool {
+        lhs.driver_id == rhs.driver_id &&
+        lhs.event_driver_id == rhs.event_driver_id
+    }
+
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
+        hasher.combine(driver_id)
+        hasher.combine(event_driver_id)
     }
 }

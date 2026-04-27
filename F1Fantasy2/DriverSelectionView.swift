@@ -22,12 +22,14 @@ struct DriverSelectionView: View {
     @ObservedObject var league: League
     
     var body: some View {
-        VStack {
-            if userData.selectedLeague?.selectedEvent?.is_sprint == 1{
-                BiddingListView(league: league, event: event, userData: userData)
-            }
-            else{
-                MyLineupView(userData: userData, league: league, event: event)
+        if let league = userData.selectedLeague, let event = league.selectedEvent {
+            VStack {
+                if event.is_sprint == 1{
+                    BiddingListView(league: league, event: event, userData: userData)
+                }
+                else{
+                    MyLineupView(userData: userData, league: league, event: event)
+                }
             }
         }
     }
