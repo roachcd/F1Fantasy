@@ -31,8 +31,9 @@ struct BiddingListView: View {
     var body: some View {
         List{
             Section{
+                Text("\(league.selectedEvent!.name) sprint").font(Font.title.bold())
                 HomeView.AccessoryView(selectedLeague: league, event: event)
-            }.padding()
+            }
             Section(header: Text("No Bids Placed")){
                 ForEach(noBids, id: \.id) { driver in
                     NavigationLink{
@@ -41,7 +42,7 @@ struct BiddingListView: View {
                         DriverBiddingLabel(driver: driver)
                     }
                 }
-            }.padding()
+            }
             Section(header: Text("Bid Placed")) {
                 ForEach(withBids, id: \.id) { driver in
                     NavigationLink{
@@ -50,7 +51,7 @@ struct BiddingListView: View {
                         DriverBiddingLabel(driver: driver)
                     }
                 }
-            }.padding()
+            }
         }
     }
 }

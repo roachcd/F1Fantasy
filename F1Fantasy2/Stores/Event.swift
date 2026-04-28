@@ -51,6 +51,9 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     /// Flags if the event has a sprint event associated with it
     var has_sprint: Int
     
+    /// The associated sprint event
+    var sprint_event_object: Event?
+    
     /// Associated event id
     var sprint_event: Int
     
@@ -76,6 +79,8 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     @Published var user_lineup: [Driver] = []
     
     @Published var budget: Int = 0;
+    
+    @Published var is_loaded: Bool = false;
         
     
     /// Loads the drivers for this event asynchronously given a league ID.
@@ -106,6 +111,7 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
         }
         updateBudget()
         print(user_lineup)
+        is_loaded = true
         return success
     }
     
@@ -215,6 +221,24 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
             return false
         }
     }
+    
+    func loadSprintEvent() async -> Bool{
+        let network = Network()
+        let response = await network.get(endpoint: "event", queryItems: [URLQueryItem(name: "eventId", value: "\(sprint_event)")])
+        if response.success{
+            do{
+                let events = try JSONDecoder().decode([Event].self, from: response.data!)
+                sprint_event_object = events.first
+                return true
+            }
+            catch{
+                print(error)
+                return false
+            }
+        }
+        return false
+    }
+    
     // MARK: - Equatable Conformance
     
     /// Equatable conformance comparing events by their `id` and `name`.

@@ -117,12 +117,20 @@ final class League : Identifiable, Hashable, Codable, ObservableObject {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             
-            self.selectedEvent = self.events
-                .compactMap { event -> (event: Event, date: Date)? in
-                    guard let date = formatter.date(from: event.event_date) else { return nil }
-                    return (event, date)
+            //Get next event
+            let now = Date()
+            let upcomingNonSprintEvents = self.events.compactMap { event -> (event: Event, date: Date)? in
+                guard let date = formatter.date(from: event.event_date),
+                      event.is_sprint == 0,  //Ignore sprints
+                      date > now
+                else {
+                    return nil
                 }
-                .filter { $0.date > Date() }
+                return (event, date)
+            }
+            
+            //Set next event
+            self.selectedEvent = upcomingNonSprintEvents
                 .min { $0.date < $1.date }?
                 .event
             

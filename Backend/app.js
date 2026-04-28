@@ -231,6 +231,16 @@ app.get('/events', (req, res) => {
     });
 });
 
+app.get('/event', (req, res) => {
+    const eventId = req.query.eventId;
+
+    const sql = 'SELECT * FROM events where id = ?';
+    pool.query(sql, [eventId], (err, result) => {
+        if (err) return res.status(500).json({ message: "DB error" });
+        res.json(result);
+    });
+});
+
 /**
  * Returns all drivers for a specific event and league,
  * including total bid amounts per driver.

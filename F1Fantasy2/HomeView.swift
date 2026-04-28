@@ -39,17 +39,15 @@ struct HomeView: View {
 
         var body: some View {
             HStack {
-                if selectedLeague.selectedEvent?.status == 1 {
+                if event.status == 1 {
                     Image(systemName: "lock.fill")
                     Text("This event is locked")
-                } else if selectedLeague.selectedEvent?.status == 2 {
+                } else if event.status == 2 {
                     Image(systemName: "lock.open.fill")
-                    CountdownText(timestamp: selectedLeague.selectedEvent!.bidding_closes_at)
+                    CountdownText(timestamp: event.bidding_closes_at)
                     Spacer()
-                    if let event = selectedLeague.selectedEvent {
-                        Text("$\(event.budget)")
-                    }
-                } else if selectedLeague.selectedEvent?.status == 3 {
+                    Text("$\(event.budget)")
+                } else if event.status == 3 {
                     Image(systemName: "flag.pattern.checkered.2.crossed")
                     Text("This event is finished")
                 }
@@ -68,7 +66,8 @@ struct HomeView: View {
         @State var eventSheet: Bool = false
         @State private var selectedTab = 0
         @State private var showSprintView: Bool = false
-        
+        @State private var loadingSprintEvent: Bool = true
+                
         var body: some View {
             Group {
                 if let league = userData.selectedLeague {
@@ -141,10 +140,27 @@ struct HomeView: View {
             } label: {
                 Image(systemName: "flag.fill")
             }
-            .applyGlassButtonStyleIfAvailable() //Apply .bottonStyle(.glass) on 26
+            //.applyGlassButtonStyleIfAvailable() //Apply .bottonStyle(.glass) on 26
             .sheet(isPresented: $showSprintView) {
-                NavigationView{
-                    BiddingListView(league: league, event: userData.selectedLeague!.selectedEvent!, userData: userData)
+                NavigationView {
+                    if let sprintEvent = userData.selectedLeague?.selectedEvent?.sprint_event_object,
+                       sprintEvent.is_loaded {
+                        BiddingListView(
+                            league: league,
+                            event: sprintEvent,
+                            userData: userData
+                        )
+                    } else {
+                        ProgressView()
+                    }
+                }.task{
+                    let success = await userData.selectedLeague!.selectedEvent!.loadSprintEvent()
+                    if success{
+                        let success = await userData.selectedLeague!.selectedEvent!.sprint_event_object!.load(leagueId: league.id, token: userData.token)
+                        if !success{
+                            print("Error loading sprint")
+                        }
+                    }
                 }
             }
         }
@@ -213,7 +229,7 @@ struct HomeView: View {
 
         var body: some View {
             List {
-                ForEach(league.events, id: \.id){event in
+                ForEach(league.events.filter { $0.is_sprint == 0 }, id: \.id) { event in
                     Button{
                         league.selectedEvent = event
                         dismiss()
