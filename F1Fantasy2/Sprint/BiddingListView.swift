@@ -30,9 +30,9 @@ struct BiddingListView: View {
     
     var body: some View {
         List{
-            if #unavailable(iOS 26) {
+            Section{
                 HomeView.AccessoryView(selectedLeague: league, event: event)
-            }
+            }.padding()
             Section(header: Text("No Bids Placed")){
                 ForEach(noBids, id: \.id) { driver in
                     NavigationLink{
@@ -41,7 +41,7 @@ struct BiddingListView: View {
                         DriverBiddingLabel(driver: driver)
                     }
                 }
-            }
+            }.padding()
             Section(header: Text("Bid Placed")) {
                 ForEach(withBids, id: \.id) { driver in
                     NavigationLink{
@@ -50,7 +50,7 @@ struct BiddingListView: View {
                         DriverBiddingLabel(driver: driver)
                     }
                 }
-            }
+            }.padding()
         }
     }
 }

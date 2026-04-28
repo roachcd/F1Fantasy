@@ -19,24 +19,29 @@ struct MyLineupView: View {
     
     var body: some View {
         List{
-            if #unavailable(iOS 26) {
-                HomeView.AccessoryView(selectedLeague: league, event: event)
-            }
-            ForEach(event.user_lineup, id: \.id) { driver in
-                NavigationLink{
-                    DriverView(driver: driver, event: event, userData: userData)
-                } label: {
-                    DriverLabel(driver: driver)
+            Section{
+                if #unavailable(iOS 26) {
+                    HomeView.AccessoryView(selectedLeague: league, event: event)
                 }
             }
-            if event.status == 2{
-                Button{
-                    addingDriver = true
-                }label: {
-                    Text("Add Driver")
+            Section{
+                ForEach(event.user_lineup, id: \.id) { driver in
+                    NavigationLink{
+                        DriverView(driver: driver, event: event, userData: userData)
+                    } label: {
+                        DriverLabel(driver: driver)
+                    }
+                }
+                if event.status == 2{
+                    Button{
+                        addingDriver = true
+                    }label: {
+                        Text("Add Driver")
+                    }
                 }
             }
-        }.task {
+        }
+        .task {
             do{
                 print("getting user lineup")
                 let success = try await event.getUserDrivers(token: userData.token, leagueId: league.id)

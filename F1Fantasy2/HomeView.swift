@@ -15,21 +15,19 @@ import SwiftUI
 ///     - State: Maintains the currently selected tab and the event sheet presentation state.
 struct HomeView: View {
     @ObservedObject var userData: UserData
-    @State private var selectedTab = 0
-    @State var eventSheet: Bool = false
     
     var body: some View {
-        if #available(iOS 26.0, *){
-            tabBar
-                .tabBarMinimizeBehavior(.onScrollDown)
-                .tabViewBottomAccessory {
-                    if let selectedLeague = userData.selectedLeague{
+        if let selectedLeague = userData.selectedLeague{
+            if #available(iOS 26.0, *){
+                tabBar(userData: userData, league: selectedLeague)
+                    .tabBarMinimizeBehavior(.onScrollDown)
+                    .tabViewBottomAccessory {
                         AccessoryView(selectedLeague: selectedLeague, event: selectedLeague.selectedEvent!)
                     }
-                }
-        }
-        else{
-            tabBar
+            }
+            else{
+                tabBar(userData: userData, league: selectedLeague)
+            }
         }
     }
 
@@ -64,100 +62,125 @@ struct HomeView: View {
     /// Builds the main tab view with tabs for League, Bidding, and Extra sections.
     /// Handles top toolbar items including the league menu and event button,
     /// and manages the presentation of the event selection sheet.
-    private var tabBar: some View {
-        Group {
-            if let league = userData.selectedLeague {
-                TabView(selection: $selectedTab) {
-                    LeagueView(userData: userData)
-                        .tabItem { Label("League", systemImage: "chart.bar.fill") }
-                        .tag(0)
-                    
-                    if let event = userData.selectedLeague?.selectedEvent{
-                        DriverSelectionView(userData: userData, event: event, league: userData.selectedLeague!)
-                            .tabItem {
-                                Label(event.is_sprint == 1 ? "Bidding" : "Lineup",
-                                      systemImage: "flag.pattern.checkered")
-                            }
-                            .tag(1)
-                            .id(event.id)
-                    } else {
-                        BiddingViewPlaceholder()
-                            .tabItem { Label("Lineup", systemImage: "flag.pattern.checkered") }
-                            .tag(1)
-                    }
-                    
-                    ExtraGameView()
-                        .tabItem { Label("Extra", systemImage: "list.bullet") }
-                        .tag(3)
-                }
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        leagueMenu
-                    }
-                    ToolbarItem(placement: .topBarLeading) {
-                        EventToolbarButton(league: league, eventSheet: $eventSheet)
-                    }
-                }
-                .sheet(isPresented: $eventSheet){
-                    EventIndicatorMenu(league: league, userData: userData)
-                }
-                .onChange(of: selectedTab){
-                    Task{
-                        _ = await userData.selectedLeague!.selectedEvent!.load(leagueId: league.id, token: userData.token)
-                    }
-                }
-            } else {
-                // Fallback when no league is selected
-                ContentUnavailableView(
-                    "No League Selected",
-                    systemImage: "house.fill",
-                    description: Text("Join or select a league from the menu.")
-                )
-            }
-        }
-    }
-    
-    private var leagueMenu: some View {
-        Menu {
-            HStack{
-                NavigationLink {
-                    AccountView(userData: userData)
-                } label: {
-                    Label("Account", systemImage: "person.fill")
-                }
-                NavigationLink {
-                    JoinLeagueView(userData: userData)
-                } label: {
-                    Label("Join League", systemImage: "plus.app.fill")
-                }
-            }
-            Section{
-                ForEach(userData.leagues, id: \.id) { league in
-                    Button {
-                        Task{
-                            _ = await league.load(token: userData.token)
-                            userData.selectedLeague = league
-                            selectedTab = 0
+    struct tabBar: View {
+        @ObservedObject var userData: UserData
+        @ObservedObject var league: League
+        @State var eventSheet: Bool = false
+        @State private var selectedTab = 0
+        @State private var showSprintView: Bool = false
+        
+        var body: some View {
+            Group {
+                if let league = userData.selectedLeague {
+                    TabView(selection: $selectedTab) {
+                        LeagueView(userData: userData)
+                            .tabItem { Label("League", systemImage: "chart.bar.fill") }
+                            .tag(0)
+                        
+                        if let event = userData.selectedLeague?.selectedEvent{
+                            DriverSelectionView(userData: userData, event: event, league: userData.selectedLeague!)
+                                .tabItem {
+                                    Label(event.is_sprint == 1 ? "Bidding" : "Lineup",
+                                          systemImage: "flag.pattern.checkered")
+                                }
+                                .tag(1)
+                                .id(event.id)
+                        } else {
+                            BiddingViewPlaceholder()
+                                .tabItem { Label("Lineup", systemImage: "flag.pattern.checkered") }
+                                .tag(1)
                         }
-                    } label: {
-                        Text(league.name)
+                        
+                        ExtraGameView()
+                            .tabItem { Label("Extra", systemImage: "list.bullet") }
+                            .tag(3)
                     }
-                }
-            }
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "house.fill")
-                if let selectedLeague = userData.selectedLeague {
-                    Text(selectedLeague.name)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-                else{
-                    Text("Error")
+                    .toolbar {
+                        if userData.selectedLeague?.selectedEvent?.has_sprint == 1{
+                            ToolbarItem(placement: .topBarTrailing){
+                                ZStack(alignment: .topTrailing) {
+                                    sprintMenu
+                                    Text("")
+                                        .font(.caption2)
+                                        .foregroundColor(.white)
+                                        .padding(4)
+                                        .background(Color.red)
+                                        .clipShape(Circle())
+                                }
+                            }
+                        }
+                        ToolbarItem(placement: .topBarTrailing) {
+                            leagueMenu
+                        }
+                        ToolbarItem(placement: .topBarLeading) {
+                            EventToolbarButton(league: league, eventSheet: $eventSheet)
+                        }
+                    }
+                    .sheet(isPresented: $eventSheet){
+                        EventIndicatorMenu(league: league, userData: userData)
+                    }
+                    .onChange(of: selectedTab){
+                        Task{
+                            _ = await userData.selectedLeague!.selectedEvent!.load(leagueId: league.id, token: userData.token)
+                        }
+                    }
+                } else {
+                    // Fallback when no league is selected
+                    ContentUnavailableView(
+                        "No League Selected",
+                        systemImage: "house.fill",
+                        description: Text("Join or select a league from the menu.")
+                    )
                 }
             }
         }
-        .applyGlassButtonStyleIfAvailable() //Apply .bottonStyle(.glass) on 26
+        
+        private var sprintMenu: some View {
+            Button {
+                showSprintView = true
+            } label: {
+                Image(systemName: "flag.fill")
+            }
+            .applyGlassButtonStyleIfAvailable() //Apply .bottonStyle(.glass) on 26
+            .sheet(isPresented: $showSprintView) {
+                NavigationView{
+                    BiddingListView(league: league, event: userData.selectedLeague!.selectedEvent!, userData: userData)
+                }
+            }
+        }
+        
+        private var leagueMenu: some View {
+            Menu {
+                HStack{
+                    NavigationLink {
+                        AccountView(userData: userData)
+                    } label: {
+                        Label("Account", systemImage: "person.fill")
+                    }
+                    NavigationLink {
+                        JoinLeagueView(userData: userData)
+                    } label: {
+                        Label("Join League", systemImage: "plus.app.fill")
+                    }
+                }
+                Section{
+                    ForEach(userData.leagues, id: \.id) { league in
+                        Button {
+                            Task{
+                                _ = await league.load(token: userData.token)
+                                userData.selectedLeague = league
+                                selectedTab = 0
+                            }
+                        } label: {
+                            Text(league.name)
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "house.fill")
+            }
+            .applyGlassButtonStyleIfAvailable() //Apply .bottonStyle(.glass) on 26
+        }
     }
 
     /// A button displayed in the toolbar allowing the user to open the event selection sheet.

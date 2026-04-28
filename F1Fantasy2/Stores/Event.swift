@@ -48,6 +48,12 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
     /// Flags if the event is a sprint event
     var is_sprint: Int
     
+    /// Flags if the event has a sprint event associated with it
+    var has_sprint: Int
+    
+    /// Associated event id
+    var sprint_event: Int
+    
     var spent: Int = 0
     
     enum CodingKeys: String, CodingKey {
@@ -59,6 +65,8 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
         case status
         case country
         case is_sprint
+        case has_sprint
+        case sprint_event
     }
     
     /// The list of drivers for this event, populated after loading.
