@@ -31,7 +31,7 @@ struct BiddingListView: View {
     var body: some View {
         List{
             Section{
-                Text("\(league.selectedEvent!.name) sprint").font(Font.title.bold())
+                Text("\(league.selectedEvent!.name) Sprint").font(Font.title.bold())
                 HomeView.AccessoryView(league: league)
             }
             Section(header: Text("No Bids Placed")){

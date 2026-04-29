@@ -8,7 +8,8 @@ import SwiftUI
 /// - Parameter userData: The shared user data object used to provide data to the view.
 struct LeagueView: View {
     @ObservedObject var userData: UserData
+    @ObservedObject var event: Event
     var body: some View {
-        ManagersList(userData: userData)
+        ManagersList(userData: userData, event: event)
     }
 }

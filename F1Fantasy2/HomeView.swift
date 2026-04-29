@@ -71,9 +71,11 @@ struct HomeView: View {
             Group {
                 if let league = userData.selectedLeague {
                     TabView(selection: $selectedTab) {
-                        LeagueView(userData: userData)
-                            .tabItem { Label("League", systemImage: "chart.bar.fill") }
-                            .tag(0)
+                        if let event = userData.selectedLeague?.selectedEvent{
+                            LeagueView(userData: userData, event: event)
+                                .tabItem { Label("League", systemImage: "chart.bar.fill") }
+                                .tag(0)
+                        }
                         
                         if let event = userData.selectedLeague?.selectedEvent{
                             DriverSelectionView(userData: userData, event: event, league: userData.selectedLeague!)
@@ -98,7 +100,7 @@ struct HomeView: View {
                             ToolbarItem(placement: .topBarTrailing){
                                 ZStack(alignment: .topTrailing) {
                                     sprintMenu
-                                    if userData.selectedLeague?.selectedEvent?.sprint_event_object?.budget == 100{
+                                    if userData.selectedLeague?.selectedEvent?.sprint_event_object?.budget == 100, userData.selectedLeague?.selectedEvent?.sprint_event_object?.status == 2{
                                         Text("")
                                             .font(.caption2)
                                             .foregroundColor(.white)
@@ -147,11 +149,21 @@ struct HomeView: View {
                     if !loadingSprintEvent{
                         if let _ = league.selectedEvent!.sprint_event_object{
                             if league.selectedEvent!.sprint_event_object!.is_sprint == 1{ //Guard to make sure only sprints load
-                                BiddingListView(
-                                    league: league,
-                                    event: league.selectedEvent!.sprint_event_object!,
-                                    userData: userData
-                                )
+                                
+                                if league.selectedEvent!.sprint_event_object!.status == 2{
+                                    BiddingListView(
+                                        league: league,
+                                        event: league.selectedEvent!.sprint_event_object!,
+                                        userData: userData
+                                    )
+                                }
+                                if league.selectedEvent!.sprint_event_object!.status == 1 || league.selectedEvent!.sprint_event_object!.status == 3{
+                                    ManagersList(
+                                        userData: userData,
+                                        event: league.selectedEvent!.sprint_event_object!
+                                    )
+                                }
+
                             }
                             else{
                                 Text("Error loading sprint data")
