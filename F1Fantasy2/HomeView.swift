@@ -22,7 +22,7 @@ struct HomeView: View {
                 tabBar(userData: userData, league: selectedLeague)
                     .tabBarMinimizeBehavior(.onScrollDown)
                     .tabViewBottomAccessory {
-                        AccessoryView(selectedLeague: selectedLeague, event: selectedLeague.selectedEvent!)
+                        AccessoryView(league: selectedLeague)
                     }
             }
             else{
@@ -34,20 +34,19 @@ struct HomeView: View {
     /// A bottom accessory view displayed below the tab bar showing the status of the selected event,
     /// including lock status, countdown, or finished indicator.
     struct AccessoryView: View {
-        @ObservedObject var selectedLeague: League
-        @ObservedObject var event: Event
+        @ObservedObject var league: League
 
         var body: some View {
             HStack {
-                if event.status == 1 {
+                if league.selectedEvent!.status == 1 {
                     Image(systemName: "lock.fill")
                     Text("This event is locked")
-                } else if event.status == 2 {
+                } else if league.selectedEvent!.status == 2 {
                     Image(systemName: "lock.open.fill")
-                    CountdownText(timestamp: event.bidding_closes_at)
+                    CountdownText(timestamp: league.selectedEvent!.bidding_closes_at)
                     Spacer()
-                    Text("$\(event.budget)")
-                } else if event.status == 3 {
+                    Text("$\(league.selectedEvent!.budget)")
+                } else if league.selectedEvent!.status == 3 {
                     Image(systemName: "flag.pattern.checkered.2.crossed")
                     Text("This event is finished")
                 }
@@ -143,22 +142,42 @@ struct HomeView: View {
             //.applyGlassButtonStyleIfAvailable() //Apply .bottonStyle(.glass) on 26
             .sheet(isPresented: $showSprintView) {
                 NavigationView {
-                    if let sprintEvent = userData.selectedLeague?.selectedEvent?.sprint_event_object,
-                       sprintEvent.is_loaded {
-                        BiddingListView(
-                            league: league,
-                            event: sprintEvent,
-                            userData: userData
-                        )
+                    if !loadingSprintEvent{
+                        if let _ = league.selectedEvent!.sprint_event_object{
+                            if league.selectedEvent!.sprint_event_object!.is_sprint == 1{ //Guard to make sure only sprints load
+                                BiddingListView(
+                                    league: league,
+                                    event: league.selectedEvent!.sprint_event_object!,
+                                    userData: userData
+                                )
+                            }
+                            else{
+                                Text("Error loading sprint data")
+                            }
+                        }
+                        else{
+                            Text("Error loading sprint data")
+                        }
                     } else {
                         ProgressView()
                     }
                 }.task{
-                    let success = await userData.selectedLeague!.selectedEvent!.loadSprintEvent()
+                    // Only show loading if it hasn't yet been loaded
+                    if let _ = league.selectedEvent!.sprint_event_object{
+                        loadingSprintEvent = false
+                    }
+                    else{
+                        loadingSprintEvent = true
+                    }
+                    
+                    let success = await league.selectedEvent!.loadSprintEvent()
                     if success{
-                        let success = await userData.selectedLeague!.selectedEvent!.sprint_event_object!.load(leagueId: league.id, token: userData.token)
+                        let success = await league.selectedEvent!.sprint_event_object!.load(leagueId: league.id, token: userData.token)
                         if !success{
                             print("Error loading sprint")
+                        }
+                        else{
+                            loadingSprintEvent = false
                         }
                     }
                 }

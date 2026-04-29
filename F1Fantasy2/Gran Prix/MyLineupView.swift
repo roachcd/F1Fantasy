@@ -21,7 +21,7 @@ struct MyLineupView: View {
         List{
             Section{
                 if #unavailable(iOS 26) {
-                    HomeView.AccessoryView(selectedLeague: league, event: event)
+                    HomeView.AccessoryView(league: league)
                 }
             }
             Section{

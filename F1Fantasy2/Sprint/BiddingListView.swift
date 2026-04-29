@@ -32,7 +32,7 @@ struct BiddingListView: View {
         List{
             Section{
                 Text("\(league.selectedEvent!.name) sprint").font(Font.title.bold())
-                HomeView.AccessoryView(selectedLeague: league, event: event)
+                HomeView.AccessoryView(league: league)
             }
             Section(header: Text("No Bids Placed")){
                 ForEach(noBids, id: \.id) { driver in
