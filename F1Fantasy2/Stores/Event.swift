@@ -98,6 +98,10 @@ final class Event: Identifiable, Hashable, Codable, ObservableObject, Equatable 
             success = try await getDrivers(leagueId: leagueId, token: token)
             success = try await getUserDrivers(token: token, leagueId: leagueId)
             //success = try await getDriverBids(token: token, leagueId: leagueId)
+            if has_sprint == 1 {
+                success = await loadSprintEvent()
+                success = await sprint_event_object!.load(leagueId: leagueId, token: token)
+            }
             var closed: Bool {
                 guard let date = TimeFormatter.shared.date(from: bidding_closes_at) else {
                     return false

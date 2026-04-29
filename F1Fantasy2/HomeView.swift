@@ -98,12 +98,14 @@ struct HomeView: View {
                             ToolbarItem(placement: .topBarTrailing){
                                 ZStack(alignment: .topTrailing) {
                                     sprintMenu
-                                    Text("")
-                                        .font(.caption2)
-                                        .foregroundColor(.white)
-                                        .padding(4)
-                                        .background(Color.red)
-                                        .clipShape(Circle())
+                                    if userData.selectedLeague?.selectedEvent?.sprint_event_object?.budget == 100{
+                                        Text("")
+                                            .font(.caption2)
+                                            .foregroundColor(.white)
+                                            .padding(4)
+                                            .background(Color.red)
+                                            .clipShape(Circle())
+                                    }
                                 }
                             }
                         }
